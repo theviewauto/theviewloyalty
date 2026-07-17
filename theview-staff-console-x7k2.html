@@ -807,22 +807,127 @@
   </div>
 
   <script>
-    let customers = JSON.parse(localStorage.getItem('loyalty_customers')) || [
-      { id: '1001', name: 'สมชาย สุขไทย', phone: '081-234-5678', gender: 'male', dob: '1989-03-15', ageGroup: '35-44', points: 450, pdpaConsent: true, createdDate: new Date().toISOString() },
-      { id: '1002', name: 'ปรียา บุญชอบ', phone: '089-123-4567', gender: 'female', dob: '1998-07-22', ageGroup: '25-34', points: 230, pdpaConsent: true, createdDate: new Date().toISOString() },
-      { id: '1003', name: 'วิชัย ชัยศรี', phone: '087-345-6789', gender: 'male', dob: '1978-01-10', ageGroup: '45-54', points: 1850, pdpaConsent: true, createdDate: new Date().toISOString() }
-    ];
+    // ===================== API CLIENT (Google Sheets) =====================
+    const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbymAVUbnuG_u0wyRXC6IhX10I0ccJQ_tOUQbXDd_cFSefXWOpVymP5DKNq1-vv3pakh/exec';
+    const ADMIN_TOKEN = 'Aviewtrader187956';
+
+    async function apiCall(params) {
+      try {
+        const url = new URL(API_BASE_URL);
+        Object.keys(params).forEach(key => {
+          url.searchParams.append(key, params[key]);
+        });
+        const response = await fetch(url.toString());
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
+      } catch (err) {
+        console.error('API Error:', err);
+        throw err;
+      }
+    }
+
+    async function apiPost(body) {
+      try {
+        const response = await fetch(API_BASE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
+      } catch (err) {
+        console.error('API Error:', err);
+        throw err;
+      }
+    }
+
+    async function API_getAllCustomers() {
+      return await apiCall({
+        action: 'getAllCustomers',
+        token: ADMIN_TOKEN
+      });
+    }
+
+    async function API_getCustomerByPhone(phone) {
+      return await apiCall({
+        action: 'getCustomerByPhone',
+        phone: phone
+      });
+    }
+
+    async function API_getAllTransactions() {
+      return await apiCall({
+        action: 'getTransactions',
+        token: ADMIN_TOKEN
+      });
+    }
+
+    async function API_createCustomer(data) {
+      return await apiPost({
+        action: 'createCustomer',
+        token: ADMIN_TOKEN,
+        data: data
+      });
+    }
+
+    async function API_updatePoints(customerId, type, amount) {
+      return await apiPost({
+        action: 'updatePoints',
+        token: ADMIN_TOKEN,
+        data: {
+          customerId: customerId,
+          type: type,
+          amount: amount
+        }
+      });
+    }
+
+    async function API_setTierOverride(customerId, tierOverride) {
+      return await apiPost({
+        action: 'setTierOverride',
+        token: ADMIN_TOKEN,
+        data: {
+          customerId: customerId,
+          tierOverride: tierOverride
+        }
+      });
+    }
+
+    // ===================== MAIN APP =====================
+    let customers = [];
+    let transactions = [];
     
     let currentCustomer = null;
     let scanInterval = null;
-    let transactions = JSON.parse(localStorage.getItem('loyalty_transactions')) || [];
+
+    // Load data from Google Sheets on startup
+    async function initializeApp() {
+      try {
+        const custResult = await API_getAllCustomers();
+        if (custResult.customers) customers = custResult.customers;
+        
+        const txResult = await API_getAllTransactions();
+        if (txResult.transactions) transactions = txResult.transactions;
+        
+        console.log('✓ Loaded', customers.length, 'customers and', transactions.length, 'transactions from Google Sheets');
+      } catch (err) {
+        console.error('Failed to load data:', err);
+        alert('⚠️ ไม่สามารถเชื่อมต่อระบบ\nตรวจสอบการเชื่อมอินเทอร์เน็ตแล้วลองใหม่');
+      }
+    }
+
+    // Call on page load
+    document.addEventListener('DOMContentLoaded', initializeApp);
 
     function saveCustomers() {
-      localStorage.setItem('loyalty_customers', JSON.stringify(customers));
+      // No longer save to localStorage - all saves go through API
+      // This function kept for backward compatibility
     }
 
     function saveTransactions() {
-      localStorage.setItem('loyalty_transactions', JSON.stringify(transactions));
+      // No longer save to localStorage - all saves go through API
+      // This function kept for backward compatibility
+    }
     }
 
     // บันทึกทุกครั้งที่มีการเปลี่ยนแปลงคะแนน เพื่อใช้คำนวณ Analytics/Trend
@@ -1063,42 +1168,60 @@
       switchMode('detail');
     }
 
-    function setManualTier(value) {
-      currentCustomer.tierOverride = value === 'auto' ? null : value;
-      customers = customers.map(c => c.id === currentCustomer.id ? currentCustomer : c);
-      saveCustomers();
+    async function setManualTier(value) {
+      try {
+        const tierValue = value === 'auto' ? '' : value;
+        const result = await API_setTierOverride(currentCustomer.id, tierValue);
+        
+        if (!result.success) {
+          alert('❌ ไม่สามารถแก้ไขระดับได้');
+          return;
+        }
 
-      const tier = getTier(currentCustomer.points, currentCustomer.tierOverride);
-      document.getElementById('detailTier').textContent = `${tier.name} (${tier.discount})`;
-      document.getElementById('detailTier').style.color = tier.color;
+        currentCustomer.tierOverride = value === 'auto' ? null : value;
 
-      const msg = document.getElementById('message');
-      msg.className = 'message success';
-      msg.textContent = value === 'auto' 
-        ? '✓ เปลี่ยนกลับเป็นระดับอัตโนมัติแล้ว' 
-        : `✓ ตั้งระดับเป็น ${value} (บังคับ) แล้ว`;
-      setTimeout(() => { msg.textContent = ''; }, 3000);
+        const tier = getTier(currentCustomer.points, currentCustomer.tierOverride);
+        document.getElementById('detailTier').textContent = `${tier.name} (${tier.discount})`;
+        document.getElementById('detailTier').style.color = tier.color;
+
+        const msg = document.getElementById('message');
+        msg.className = 'message success';
+        msg.textContent = value === 'auto' 
+          ? '✓ เปลี่ยนกลับเป็นระดับอัตโนมัติแล้ว' 
+          : `✓ ตั้งระดับเป็น ${value} (บังคับ) แล้ว`;
+        setTimeout(() => { msg.textContent = ''; }, 3000);
+      } catch (err) {
+        alert('❌ ข้อผิดพลาด: ' + err.message);
+      }
     }
 
-    function addPoints(amount) {
-      currentCustomer.points = Math.max(0, currentCustomer.points + amount);
-      customers = customers.map(c => c.id === currentCustomer.id ? currentCustomer : c);
-      saveCustomers();
-      logTransaction(currentCustomer, amount > 0 ? 'add' : 'subtract', amount, currentCustomer.points);
-      
-      document.getElementById('detailPoints').textContent = currentCustomer.points.toLocaleString();
-      const tier = getTier(currentCustomer.points, currentCustomer.tierOverride);
-      document.getElementById('detailTier').textContent = `${tier.name} (${tier.discount})`;
-      document.getElementById('detailTier').style.color = tier.color;
-      
-      const msg = document.getElementById('message');
-      msg.className = 'message success';
-      msg.textContent = amount > 0 
-        ? `✓ เพิ่ม ${amount} คะแนน` 
-        : `✓ ลด ${Math.abs(amount)} คะแนน`;
+    async function addPoints(amount) {
+      try {
+        const result = await API_updatePoints(currentCustomer.id, amount > 0 ? 'add' : 'subtract', Math.abs(amount));
+        
+        if (!result.success) {
+          alert('❌ ไม่สามารถแก้ไขคะแนนได้');
+          return;
+        }
+
+        currentCustomer.points = result.newPoints;
+        
+        document.getElementById('detailPoints').textContent = currentCustomer.points.toLocaleString();
+        const tier = getTier(currentCustomer.points, currentCustomer.tierOverride);
+        document.getElementById('detailTier').textContent = `${tier.name} (${tier.discount})`;
+        document.getElementById('detailTier').style.color = tier.color;
+        
+        const msg = document.getElementById('message');
+        msg.className = 'message success';
+        msg.textContent = amount > 0 
+          ? `✓ เพิ่ม ${amount} คะแนน` 
+          : `✓ ลด ${Math.abs(amount)} คะแนน`;
+      } catch (err) {
+        alert('❌ ข้อผิดพลาด: ' + err.message);
+      }
     }
 
-    function addManualPoints(mode) {
+    async function addManualPoints(mode) {
       const input = document.getElementById('manualPointsInput');
       const value = parseInt(input.value, 10);
       const msg = document.getElementById('message');
@@ -1109,26 +1232,35 @@
         return;
       }
 
-      const amount = mode === 'subtract' ? -value : value;
-      currentCustomer.points = Math.max(0, currentCustomer.points + amount);
-      customers = customers.map(c => c.id === currentCustomer.id ? currentCustomer : c);
-      saveCustomers();
-      logTransaction(currentCustomer, mode === 'subtract' ? 'subtract' : 'add', amount, currentCustomer.points);
+      try {
+        const amount = mode === 'subtract' ? value : value; // API จะจัดการ sign
+        const result = await API_updatePoints(currentCustomer.id, mode === 'subtract' ? 'subtract' : 'add', amount);
+        
+        if (!result.success) {
+          alert('❌ ไม่สามารถแก้ไขคะแนนได้');
+          return;
+        }
 
-      document.getElementById('detailPoints').textContent = currentCustomer.points.toLocaleString();
-      const tier = getTier(currentCustomer.points, currentCustomer.tierOverride);
-      document.getElementById('detailTier').textContent = `${tier.name} (${tier.discount})`;
-      document.getElementById('detailTier').style.color = tier.color;
+        currentCustomer.points = result.newPoints;
 
-      msg.className = 'message success';
-      msg.textContent = mode === 'subtract'
-        ? `✓ ลด ${value.toLocaleString()} คะแนน`
-        : `✓ เพิ่ม ${value.toLocaleString()} คะแนน`;
+        document.getElementById('detailPoints').textContent = currentCustomer.points.toLocaleString();
+        const tier = getTier(currentCustomer.points, currentCustomer.tierOverride);
+        document.getElementById('detailTier').textContent = `${tier.name} (${tier.discount})`;
+        document.getElementById('detailTier').style.color = tier.color;
 
-      input.value = '';
+        msg.className = 'message success';
+        msg.textContent = mode === 'subtract'
+          ? `✓ ลด ${value.toLocaleString()} คะแนน`
+          : `✓ เพิ่ม ${value.toLocaleString()} คะแนน`;
+
+        input.value = '';
+      } catch (err) {
+        msg.className = 'message error';
+        msg.textContent = '❌ ข้อผิดพลาด: ' + err.message;
+      }
     }
 
-    function setExactPoints() {
+    async function setExactPoints() {
       const input = document.getElementById('manualPointsInput');
       const value = parseInt(input.value, 10);
       const msg = document.getElementById('message');
@@ -1143,21 +1275,29 @@
         return;
       }
 
-      const previousPoints = currentCustomer.points;
-      currentCustomer.points = value;
-      customers = customers.map(c => c.id === currentCustomer.id ? currentCustomer : c);
-      saveCustomers();
-      logTransaction(currentCustomer, 'set', value - previousPoints, currentCustomer.points);
+      try {
+        const result = await API_updatePoints(currentCustomer.id, 'set', value);
+        
+        if (!result.success) {
+          alert('❌ ไม่สามารถแก้ไขคะแนนได้');
+          return;
+        }
 
-      document.getElementById('detailPoints').textContent = currentCustomer.points.toLocaleString();
-      const tier = getTier(currentCustomer.points, currentCustomer.tierOverride);
-      document.getElementById('detailTier').textContent = `${tier.name} (${tier.discount})`;
-      document.getElementById('detailTier').style.color = tier.color;
+        currentCustomer.points = result.newPoints;
 
-      msg.className = 'message success';
-      msg.textContent = `✓ ตั้งคะแนนเป็น ${value.toLocaleString()} คะแนนแล้ว`;
+        document.getElementById('detailPoints').textContent = currentCustomer.points.toLocaleString();
+        const tier = getTier(currentCustomer.points, currentCustomer.tierOverride);
+        document.getElementById('detailTier').textContent = `${tier.name} (${tier.discount})`;
+        document.getElementById('detailTier').style.color = tier.color;
 
-      input.value = '';
+        msg.className = 'message success';
+        msg.textContent = `✓ ตั้งคะแนนเป็น ${value.toLocaleString()} คะแนนแล้ว`;
+
+        input.value = '';
+      } catch (err) {
+        msg.className = 'message error';
+        msg.textContent = '❌ ข้อผิดพลาด: ' + err.message;
+      }
     }
 
     function calculateAge(dob) {
@@ -1194,7 +1334,7 @@
       return daysLeft;
     }
 
-    function createCustomer() {
+    async function createCustomer() {
       const name = document.getElementById('newName').value;
       const phone = document.getElementById('newPhone').value;
       const gender = document.getElementById('newGender').value;
@@ -1228,34 +1368,43 @@
         return;
       }
 
-      const ageGroup = getAgeGroup(dob);
-      const id = document.getElementById('newId').value || 'C' + Date.now();
-      
-      customers.push({
-        id,
-        name,
-        phone,
-        gender,
-        dob,
-        ageGroup,
-        points: 0,
-        tierOverride: null,
-        pdpaConsent: true,
-        createdDate: new Date().toISOString()
-      });
-      
-      saveCustomers();
-      
-      // Clear form
-      document.getElementById('newName').value = '';
-      document.getElementById('newPhone').value = '';
-      document.getElementById('newGender').value = '';
-      document.getElementById('newDOB').value = '';
-      document.getElementById('newId').value = '';
-      document.getElementById('pdpaConsent').checked = false;
-      
-      alert('✓ ลงทะเบียนสำเร็จ!');
-      switchMode('home');
+      try {
+        const id = document.getElementById('newId').value || 'C' + Date.now();
+        const result = await API_createCustomer({
+          id,
+          name,
+          phone,
+          gender,
+          dob,
+          pdpaConsent: true
+        });
+
+        if (!result.success) {
+          if (result.error === 'DUPLICATE_PHONE') {
+            errorEl.textContent = `❌ เบอร์โทรนี้ลงทะเบียนแล้ว (ID: ${result.existingId} - ${result.existingName})`;
+          } else {
+            errorEl.textContent = '❌ ' + (result.error || 'ลงทะเบียนไม่สำเร็จ');
+          }
+          return;
+        }
+
+        // Reload customer list
+        const custResult = await API_getAllCustomers();
+        if (custResult.customers) customers = custResult.customers;
+
+        // Clear form
+        document.getElementById('newName').value = '';
+        document.getElementById('newPhone').value = '';
+        document.getElementById('newGender').value = '';
+        document.getElementById('newDOB').value = '';
+        document.getElementById('newId').value = '';
+        document.getElementById('pdpaConsent').checked = false;
+        
+        alert('✓ ลงทะเบียนสำเร็จ!');
+        switchMode('home');
+      } catch (err) {
+        errorEl.textContent = '❌ ข้อผิดพลาดเครือข่าย: ' + err.message;
+      }
     }
 
     const THAI_MONTHS_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
