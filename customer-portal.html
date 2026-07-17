@@ -433,6 +433,8 @@
           โค้ด OTP จะถูกส่งไป SMS <br/>
           (ระบบจำลอง: ป้อน 000000)
         </div>
+
+        <div id="apiStatus" style="text-align: center; margin-top: 1rem; font-size: 11px; color: #999;"></div>
       </div>
       
       <div class="footer">
@@ -589,6 +591,40 @@
   </div>
 
   <script>
+    // ===================== API CLIENT (Google Sheets) =====================
+    const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbymAVUbnuG_u0wyRXC6IhX10I0ccJQ_tOUQbXDd_cFSefXWOpVymP5DKNq1-vv3pakh/exec';
+    const ADMIN_TOKEN = 'Aviewtrader187956';
+
+    async function apiCall(params) {
+      try {
+        const url = new URL(API_BASE_URL);
+        Object.keys(params).forEach(key => {
+          url.searchParams.append(key, params[key]);
+        });
+        const response = await fetch(url.toString());
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
+      } catch (err) {
+        console.error('API Error:', err);
+        throw err;
+      }
+    }
+
+    async function API_getCustomerByPhone(phone) {
+      return await apiCall({
+        action: 'getCustomerByPhone',
+        phone: phone
+      });
+    }
+
+    async function API_getTransactions(customerId) {
+      return await apiCall({
+        action: 'getTransactions',
+        customerId: customerId
+      });
+    }
+
+    // ===================== MAIN APP =====================
     let currentCustomer = null;
     let otpCode = null;
     let otpPhone = null;
@@ -641,10 +677,12 @@
       return daysLeft;
     }
 
-    function requestOTP() {
+    async function requestOTP() {
       const phone = document.getElementById('loginPhone').value.replace(/[-]/g, '');
       const errorEl = document.getElementById('loginError');
+      const statusEl = document.getElementById('apiStatus');
       errorEl.style.display = 'none';
+      statusEl.textContent = '';
       
       if (!/^\d{10}$/.test(phone)) {
         errorEl.textContent = '❌ เบอร์โทรไม่ถูกต้อง';
@@ -652,14 +690,34 @@
         return;
       }
       
-      // Simulate OTP (in real: send via SMS API)
-      otpCode = '000000';
-      otpPhone = phone;
-      
-      document.getElementById('otpPhone').textContent = '08' + phone.slice(2, 4) + '-***-' + phone.slice(8);
-      
-      switchMode('otp');
-      startOTPTimer();
+      try {
+        // Show loading status
+        statusEl.textContent = '⏳ กำลังเข้าถึงระบบ...';
+        
+        // Check customer from Google Sheets
+        const result = await API_getCustomerByPhone(phone);
+        
+        if (!result.found) {
+          errorEl.textContent = '❌ ไม่พบข้อมูลสมาชิก';
+          errorEl.style.display = 'block';
+          statusEl.textContent = '';
+          return;
+        }
+        
+        // Found customer - proceed with OTP
+        otpCode = '000000';
+        otpPhone = phone;
+        
+        document.getElementById('otpPhone').textContent = '08' + phone.slice(2, 4) + '-***-' + phone.slice(8);
+        
+        statusEl.textContent = '';
+        switchMode('otp');
+        startOTPTimer();
+      } catch (err) {
+        errorEl.textContent = '❌ ข้อผิดพลาดเครือข่าย: ' + err.message;
+        errorEl.style.display = 'block';
+        statusEl.textContent = '';
+      }
     }
 
     function startOTPTimer() {
@@ -697,19 +755,25 @@
       loadCustomerData(otpPhone);
     }
 
-    function loadCustomerData(phone) {
-      // Load from localStorage (shared with admin)
-      const customers = JSON.parse(localStorage.getItem('loyalty_customers')) || [];
-      currentCustomer = customers.find(c => c.phone === phone || c.phone === '0' + phone.slice(1));
-      
-      if (!currentCustomer) {
-        document.getElementById('otpError').textContent = '❌ ไม่พบข้อมูลสมาชิก';
+    async function loadCustomerData(phone) {
+      try {
+        // Load from Google Sheets API
+        const result = await API_getCustomerByPhone(phone);
+        
+        if (!result.found) {
+          document.getElementById('otpError').textContent = '❌ ไม่พบข้อมูลสมาชิก';
+          document.getElementById('otpError').style.display = 'block';
+          return;
+        }
+        
+        currentCustomer = result.customer;
+        
+        displayDashboard();
+        switchMode('dashboard');
+      } catch (err) {
+        document.getElementById('otpError').textContent = '❌ ข้อผิดพลาด: ' + err.message;
         document.getElementById('otpError').style.display = 'block';
-        return;
       }
-      
-      displayDashboard();
-      switchMode('dashboard');
     }
 
     function displayDashboard() {
@@ -777,26 +841,40 @@
       loadPromo();
     }
 
-    function loadHistory() {
+    async function loadHistory() {
       const historyList = document.getElementById('historyList');
       
-      // Sample history (in real: fetch from admin data)
-      const sampleHistory = [
-        { date: '2025-01-15', action: 'ซ่อมรถ', points: 100, type: 'add' },
-        { date: '2025-01-08', action: 'ใช้คะแนนลด 300 บาท', points: -300, type: 'redeem' },
-        { date: '2025-01-01', action: 'โบนัสวันเกิด', points: 50, type: 'bonus' },
-      ];
-      
-      historyList.innerHTML = sampleHistory.map(h => `
-        <div class="history-item">
-          <div class="history-date">📅 ${h.date}</div>
-          <div class="history-action">${h.action}</div>
-          <div class="history-points">
-            ${h.type === 'add' ? '➕' : h.type === 'bonus' ? '🎁' : '➖'} 
-            ${h.points > 0 ? '+' : ''}${h.points} คะแนน
-          </div>
-        </div>
-      `).join('');
+      try {
+        // Fetch real transaction history from Google Sheets
+        const result = await API_getTransactions(currentCustomer.id);
+        
+        if (!result.transactions || result.transactions.length === 0) {
+          historyList.innerHTML = '<div class="history-item" style="text-align: center; color: #999;">ยังไม่มีประวัติธุรกรรม</div>';
+          return;
+        }
+        
+        // Reverse to show newest first
+        const transactions = [...result.transactions].reverse();
+        
+        historyList.innerHTML = transactions.map(t => {
+          const txType = t.type === 'set' ? 'ตั้งคะแนน' : t.type === 'add' ? 'เพิ่มคะแนน' : t.type === 'subtract' ? 'ใช้คะแนน' : t.type;
+          const icon = Number(t.amount) > 0 ? '➕' : Number(t.amount) < 0 ? '➖' : '⚙️';
+          const date = new Date(t.date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+          
+          return `
+            <div class="history-item">
+              <div class="history-date">📅 ${date}</div>
+              <div class="history-action">${txType}</div>
+              <div class="history-points">
+                ${icon} ${Number(t.amount) >= 0 ? '+' : ''}${t.amount} คะแนน
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        historyList.innerHTML = '<div class="history-item" style="text-align: center; color: #f44336;">⚠️ ไม่สามารถโหลดประวัติ</div>';
+        console.error('Error loading history:', err);
+      }
     }
 
     function loadPromo() {
