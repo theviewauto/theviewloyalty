@@ -528,7 +528,19 @@
       document.getElementById(mode + '-mode').classList.add('active');
     }
 
-    function getTier(points) {
+    function getTier(points, manualTier) {
+      if (manualTier && manualTier !== 'auto') {
+        const tiers = {
+          'Silver': { name: 'Silver', discount: '3-5%', color: '#666' },
+          'Gold': { name: 'Gold', discount: '7-10%', color: '#FF9500' },
+          'Platinum': { name: 'Platinum', discount: '12-15%', color: '#FFD700' }
+        };
+        return tiers[manualTier] || getTierAuto(points);
+      }
+      return getTierAuto(points);
+    }
+
+    function getTierAuto(points) {
       if (points >= 150000) return { name: 'Platinum', discount: '12-15%', color: '#FFD700' };
       if (points >= 50000) return { name: 'Gold', discount: '7-10%', color: '#FF9500' };
       return { name: 'Silver', discount: '3-5%', color: '#666' };
@@ -630,7 +642,7 @@
     }
 
     function displayDashboard() {
-      const tier = getTier(currentCustomer.points);
+      const tier = getTier(currentCustomer.points, currentCustomer.tierOverride);
       const age = calculateAge(currentCustomer.dob);
       const daysUntilBday = getDaysUntilBirthday(currentCustomer.dob);
       
@@ -718,7 +730,7 @@
 
     function loadPromo() {
       const promoList = document.getElementById('promoList');
-      const tier = getTier(currentCustomer.points);
+      const tier = getTier(currentCustomer.points, currentCustomer.tierOverride);
       const daysUntilBday = getDaysUntilBirthday(currentCustomer.dob);
       
       let promos = [];
@@ -755,7 +767,7 @@
     }
 
     function shareWhatsApp() {
-      const msg = `🎉 สวัสดี! ฉันเป็นสมาชิก ${getTier(currentCustomer.points).name} ที่ THE VIEW ยล้อม\n\nคะแนนปัจจุบัน: ${currentCustomer.points} 🌟\nมาซ่อมรถด้วยกันได้นะ! 💚\n\nhttps://loyalty.theviewgroup.com`;
+      const msg = `🎉 สวัสดี! ฉันเป็นสมาชิก ${getTier(currentCustomer.points, currentCustomer.tierOverride).name} ที่ THE VIEW ยล้อม\n\nคะแนนปัจจุบัน: ${currentCustomer.points} 🌟\nมาซ่อมรถด้วยกันได้นะ! 💚\n\nhttps://loyalty.theviewgroup.com`;
       const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
       window.open(url, '_blank');
     }
