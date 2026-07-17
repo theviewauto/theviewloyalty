@@ -509,6 +509,23 @@
         <button class="btn-success" onclick="addPoints(10)">+10</button>
         <button class="btn-danger" onclick="addPoints(-10)">-10</button>
       </div>
+
+      <div class="stat-card" style="background: #f9f9f9; text-align: left; padding: 12px; margin-top: 12px;">
+        <div style="font-size: 13px; font-weight: 600; color: #333; margin-bottom: 8px;">
+          ✏️ พิมพ์คะแนนเอง
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <input type="number" id="manualPointsInput" placeholder="ระบุจำนวน เช่น 250" style="flex: 1; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 8px;">
+          <button class="btn-success" style="width: auto; padding: 12px 16px; white-space: nowrap;" onclick="addManualPoints()">➕ เพิ่ม</button>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <button class="btn-secondary" style="flex:1; padding: 10px; font-size: 13px;" onclick="addManualPoints('subtract')">➖ ลบคะแนนตามจำนวนนี้</button>
+          <button class="btn-secondary" style="flex:1; padding: 10px; font-size: 13px;" onclick="setExactPoints()">🎯 ตั้งเป็นค่านี้เลย</button>
+        </div>
+        <div style="font-size: 11px; color: #666; margin-top: 6px;">
+          💡 "เพิ่ม/ลบ" = บวก/ลบจากคะแนนเดิม · "ตั้งเป็นค่านี้เลย" = แก้คะแนนเป็นตัวเลขที่พิมพ์ทันที
+        </div>
+      </div>
       
       <div class="qr-container">
         <div style="font-size: 12px; color: #666; margin-bottom: 12px;">QR Code (พิมพ์บนบัตร)</div>
@@ -791,6 +808,65 @@
       msg.textContent = amount > 0 
         ? `✓ เพิ่ม ${amount} คะแนน` 
         : `✓ ลด ${Math.abs(amount)} คะแนน`;
+    }
+
+    function addManualPoints(mode) {
+      const input = document.getElementById('manualPointsInput');
+      const value = parseInt(input.value, 10);
+      const msg = document.getElementById('message');
+
+      if (isNaN(value) || value <= 0) {
+        msg.className = 'message error';
+        msg.textContent = '❌ กรุณาพิมพ์จำนวนคะแนนเป็นตัวเลขที่มากกว่า 0';
+        return;
+      }
+
+      const amount = mode === 'subtract' ? -value : value;
+      currentCustomer.points = Math.max(0, currentCustomer.points + amount);
+      customers = customers.map(c => c.id === currentCustomer.id ? currentCustomer : c);
+      saveCustomers();
+
+      document.getElementById('detailPoints').textContent = currentCustomer.points.toLocaleString();
+      const tier = getTier(currentCustomer.points, currentCustomer.tierOverride);
+      document.getElementById('detailTier').textContent = `${tier.name} (${tier.discount})`;
+      document.getElementById('detailTier').style.color = tier.color;
+
+      msg.className = 'message success';
+      msg.textContent = mode === 'subtract'
+        ? `✓ ลด ${value.toLocaleString()} คะแนน`
+        : `✓ เพิ่ม ${value.toLocaleString()} คะแนน`;
+
+      input.value = '';
+    }
+
+    function setExactPoints() {
+      const input = document.getElementById('manualPointsInput');
+      const value = parseInt(input.value, 10);
+      const msg = document.getElementById('message');
+
+      if (isNaN(value) || value < 0) {
+        msg.className = 'message error';
+        msg.textContent = '❌ กรุณาพิมพ์จำนวนคะแนนเป็นตัวเลขที่ถูกต้อง (0 ขึ้นไป)';
+        return;
+      }
+
+      if (!confirm(`ยืนยันตั้งคะแนนของ ${currentCustomer.name} เป็น ${value.toLocaleString()} คะแนน?\n(จะแทนที่คะแนนเดิมทั้งหมด)`)) {
+        return;
+      }
+
+      currentCustomer.points = value;
+      customers = customers.map(c => c.id === currentCustomer.id ? currentCustomer : c);
+      saveCustomers();
+
+      document.getElementById('detailPoints').textContent = currentCustomer.points.toLocaleString();
+      const tier = getTier(currentCustomer.points, currentCustomer.tierOverride);
+      document.getElementById('detailTier').textContent = `${tier.name} (${tier.discount})`;
+      document.getElementById('detailTier').style.color = tier.color;
+
+      msg.className = 'message success';
+      msg.textContent = `✓ ตั้งคะแนนเป็น ${value.toLocaleString()} คะแนนแล้ว`;
+
+      input.value = '';
     }
 
     function calculateAge(dob) {
