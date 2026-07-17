@@ -246,6 +246,245 @@
       color: #666;
       margin-top: 4px;
     }
+
+    /* ===== Professional Dashboard Additions ===== */
+    .dash-section {
+      margin: 1.75rem 0;
+    }
+
+    .dash-section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .dash-section-sub {
+      font-size: 11px;
+      font-weight: 400;
+      color: #999;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .kpi-card {
+      background: white;
+      border: 1px solid #e5e5e5;
+      border-radius: 10px;
+      padding: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card.accent-blue { border-left: 3px solid #007AFF; }
+    .kpi-card.accent-green { border-left: 3px solid #34C759; }
+    .kpi-card.accent-orange { border-left: 3px solid #FF9500; }
+    .kpi-card.accent-red { border-left: 3px solid #FF3B30; }
+    .kpi-card.accent-purple { border-left: 3px solid #AF52DE; }
+    .kpi-card.accent-gold { border-left: 3px solid #D4AF37; }
+
+    .kpi-label {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .kpi-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a1a1a;
+      line-height: 1.2;
+    }
+
+    .kpi-delta {
+      font-size: 11px;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    .kpi-delta.up { color: #34C759; }
+    .kpi-delta.down { color: #FF3B30; }
+    .kpi-delta.neutral { color: #999; }
+
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 120px;
+      padding: 0 4px;
+      margin-bottom: 8px;
+    }
+
+    .bar-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      height: 100%;
+    }
+
+    .bar-fill {
+      width: 100%;
+      max-width: 32px;
+      background: linear-gradient(180deg, #007AFF 0%, #4DA3FF 100%);
+      border-radius: 4px 4px 0 0;
+      min-height: 3px;
+      transition: height 0.3s;
+      position: relative;
+    }
+
+    .bar-value {
+      font-size: 10px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 3px;
+    }
+
+    .bar-label {
+      font-size: 10px;
+      color: #888;
+      margin-top: 6px;
+      text-align: center;
+    }
+
+    .hbar-row {
+      margin-bottom: 12px;
+    }
+
+    .hbar-top {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .hbar-name {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .hbar-stat {
+      color: #666;
+    }
+
+    .hbar-track {
+      background: #eee;
+      border-radius: 6px;
+      height: 10px;
+      overflow: hidden;
+    }
+
+    .hbar-fill {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.3s;
+    }
+
+    .leaderboard-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: white;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      margin-bottom: 6px;
+    }
+
+    .lb-rank {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #f0f0f0;
+      color: #666;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .lb-rank.gold { background: #FFD700; color: #7a5f00; }
+    .lb-rank.silver { background: #D8D8D8; color: #555; }
+    .lb-rank.bronze { background: #E8B37E; color: #6b3f0a; }
+
+    .lb-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .lb-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1a1a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lb-meta {
+      font-size: 11px;
+      color: #999;
+    }
+
+    .lb-points {
+      font-size: 14px;
+      font-weight: 700;
+      color: #007AFF;
+      flex-shrink: 0;
+    }
+
+    .risk-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: #FFF9F0;
+      border: 1px solid #FFE0B2;
+      border-radius: 8px;
+      margin-bottom: 6px;
+    }
+
+    .risk-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    .risk-meta {
+      font-size: 11px;
+      color: #B26A00;
+      margin-top: 2px;
+    }
+
+    .risk-badge {
+      font-size: 11px;
+      font-weight: 700;
+      color: #B26A00;
+      background: #FFE0B2;
+      padding: 4px 10px;
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 1.5rem;
+      color: #999;
+      font-size: 13px;
+      background: #fafafa;
+      border-radius: 8px;
+    }
     
     .btn-grid {
       display: grid;
@@ -364,38 +603,67 @@
 
     <!-- ANALYTICS MODE -->
     <div id="analytics-mode" class="mode">
-      <h2>📊 วิเคราะห์ข้อมูล</h2>
-      
-      <div class="analytics-grid">
-        <div class="analytics-card">
-          <div class="analytics-label">ทั้งหมด</div>
-          <div class="analytics-value" id="totalCustomers">0</div>
-          <div class="analytics-percent" id="totalPercent">-</div>
+      <h2>📊 Business Dashboard</h2>
+      <div style="font-size: 12px; color: #999; margin-top: -12px; margin-bottom: 1rem;" id="analyticsUpdated"></div>
+
+      <!-- KPI OVERVIEW -->
+      <div class="dash-section">
+        <div class="dash-section-title">
+          ภาพรวมธุรกิจ
+          <span class="dash-section-sub">อัพเดทเรียลไทม์</span>
         </div>
-        <div class="analytics-card">
-          <div class="analytics-label">ชาย</div>
-          <div class="analytics-value" id="maleCount">0</div>
-          <div class="analytics-percent" id="malePercent">0%</div>
-        </div>
-        <div class="analytics-card">
-          <div class="analytics-label">หญิง</div>
-          <div class="analytics-value" id="femaleCount">0</div>
-          <div class="analytics-percent" id="femalePercent">0%</div>
-        </div>
-        <div class="analytics-card">
-          <div class="analytics-label">ไม่ระบุ</div>
-          <div class="analytics-value" id="otherCount">0</div>
-          <div class="analytics-percent" id="otherPercent">0%</div>
-        </div>
+        <div class="kpi-grid" id="kpiGrid"></div>
       </div>
 
-      <h3>👶 ช่วงอายุ</h3>
-      <div class="analytics-grid" id="ageGroupAnalytics"></div>
+      <!-- MEMBER GROWTH -->
+      <div class="dash-section">
+        <div class="dash-section-title">
+          การเติบโตของสมาชิก
+          <span class="dash-section-sub">6 เดือนล่าสุด</span>
+        </div>
+        <div class="bar-chart" id="growthChart"></div>
+      </div>
 
-      <h3>⭐ Tier Tier</h3>
-      <div class="analytics-grid" id="tierAnalytics"></div>
+      <!-- TIER DISTRIBUTION -->
+      <div class="dash-section">
+        <div class="dash-section-title">
+          สัดส่วนระดับสมาชิก
+          <span class="dash-section-sub">พร้อมคะแนนค้างต่อระดับ</span>
+        </div>
+        <div id="tierBars"></div>
+      </div>
 
-      <button class="btn-secondary" style="width: 100%;" onclick="switchMode('home')">← กลับหน้าหลัก</button>
+      <!-- DEMOGRAPHICS -->
+      <div class="dash-section">
+        <div class="dash-section-title">เพศ</div>
+        <div id="genderBars"></div>
+      </div>
+
+      <div class="dash-section">
+        <div class="dash-section-title">ช่วงอายุ</div>
+        <div id="ageBars"></div>
+      </div>
+
+      <!-- VIP LEADERBOARD -->
+      <div class="dash-section">
+        <div class="dash-section-title">
+          🏆 ลูกค้า VIP Top 10
+          <span class="dash-section-sub">เรียงตามคะแนนสะสม</span>
+        </div>
+        <div id="vipLeaderboard"></div>
+      </div>
+
+      <!-- AT RISK CUSTOMERS -->
+      <div class="dash-section">
+        <div class="dash-section-title">
+          ⚠️ ลูกค้าเสี่ยงหาย
+          <span class="dash-section-sub">ไม่มีความเคลื่อนไหว 60+ วัน</span>
+        </div>
+        <div id="atRiskList"></div>
+      </div>
+
+      <button class="btn-info" style="width: 100%; margin-top: 0.5rem;" onclick="exportAnalyticsReport()">📥 Export รายงานฉบับเต็ม (CSV)</button>
+      <button class="btn-secondary" style="width: 100%; margin-top: 8px;" onclick="switchMode('home')">← กลับหน้าหลัก</button>
     </div>
 
     <!-- CREATE MODE (Registration) -->
@@ -547,9 +815,28 @@
     
     let currentCustomer = null;
     let scanInterval = null;
+    let transactions = JSON.parse(localStorage.getItem('loyalty_transactions')) || [];
 
     function saveCustomers() {
       localStorage.setItem('loyalty_customers', JSON.stringify(customers));
+    }
+
+    function saveTransactions() {
+      localStorage.setItem('loyalty_transactions', JSON.stringify(transactions));
+    }
+
+    // บันทึกทุกครั้งที่มีการเปลี่ยนแปลงคะแนน เพื่อใช้คำนวณ Analytics/Trend
+    function logTransaction(customer, type, amount, balanceAfter) {
+      transactions.push({
+        id: 'TX' + Date.now() + Math.floor(Math.random() * 1000),
+        customerId: customer.id,
+        customerName: customer.name,
+        type: type,              // 'add' | 'subtract' | 'set'
+        amount: amount,          // จำนวนที่เปลี่ยนแปลง (+/-)
+        balanceAfter: balanceAfter,
+        date: new Date().toISOString()
+      });
+      saveTransactions();
     }
 
     function getTier(points, manualTier) {
@@ -797,6 +1084,7 @@
       currentCustomer.points = Math.max(0, currentCustomer.points + amount);
       customers = customers.map(c => c.id === currentCustomer.id ? currentCustomer : c);
       saveCustomers();
+      logTransaction(currentCustomer, amount > 0 ? 'add' : 'subtract', amount, currentCustomer.points);
       
       document.getElementById('detailPoints').textContent = currentCustomer.points.toLocaleString();
       const tier = getTier(currentCustomer.points, currentCustomer.tierOverride);
@@ -825,6 +1113,7 @@
       currentCustomer.points = Math.max(0, currentCustomer.points + amount);
       customers = customers.map(c => c.id === currentCustomer.id ? currentCustomer : c);
       saveCustomers();
+      logTransaction(currentCustomer, mode === 'subtract' ? 'subtract' : 'add', amount, currentCustomer.points);
 
       document.getElementById('detailPoints').textContent = currentCustomer.points.toLocaleString();
       const tier = getTier(currentCustomer.points, currentCustomer.tierOverride);
@@ -854,9 +1143,11 @@
         return;
       }
 
+      const previousPoints = currentCustomer.points;
       currentCustomer.points = value;
       customers = customers.map(c => c.id === currentCustomer.id ? currentCustomer : c);
       saveCustomers();
+      logTransaction(currentCustomer, 'set', value - previousPoints, currentCustomer.points);
 
       document.getElementById('detailPoints').textContent = currentCustomer.points.toLocaleString();
       const tier = getTier(currentCustomer.points, currentCustomer.tierOverride);
@@ -967,61 +1258,255 @@
       switchMode('home');
     }
 
+    const THAI_MONTHS_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
+    function monthKey(date) {
+      return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+    }
+
+    function lastActivityDate(customerId) {
+      const custTx = transactions.filter(t => t.customerId === customerId);
+      if (custTx.length === 0) return null;
+      return custTx.reduce((latest, t) => {
+        const d = new Date(t.date);
+        return d > latest ? d : latest;
+      }, new Date(custTx[0].date));
+    }
+
+    function daysSince(date) {
+      return Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
+    }
+
     function loadAnalytics() {
       const total = customers.length;
-      const male = customers.filter(c => c.gender === 'male').length;
-      const female = customers.filter(c => c.gender === 'female').length;
-      const other = customers.filter(c => c.gender === 'other').length;
-      
-      document.getElementById('totalCustomers').textContent = total;
-      document.getElementById('maleCount').textContent = male;
-      document.getElementById('malePercent').textContent = total > 0 ? Math.round(male/total*100) + '%' : '0%';
-      document.getElementById('femaleCount').textContent = female;
-      document.getElementById('femalePercent').textContent = total > 0 ? Math.round(female/total*100) + '%' : '0%';
-      document.getElementById('otherCount').textContent = other;
-      document.getElementById('otherPercent').textContent = total > 0 ? Math.round(other/total*100) + '%' : '0%';
-      
-      // Age group analytics - คำนวณจาก DOB
+      const now = new Date();
+      document.getElementById('analyticsUpdated').textContent =
+        'อัพเดทล่าสุด: ' + now.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) +
+        ' ' + now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
+      if (total === 0) {
+        document.getElementById('kpiGrid').innerHTML = '<div class="empty-state" style="grid-column: 1 / -1;">ยังไม่มีข้อมูลสมาชิก</div>';
+        document.getElementById('growthChart').innerHTML = '<div class="empty-state" style="width:100%;">ยังไม่มีข้อมูล</div>';
+        document.getElementById('tierBars').innerHTML = '<div class="empty-state">ยังไม่มีข้อมูล</div>';
+        document.getElementById('genderBars').innerHTML = '<div class="empty-state">ยังไม่มีข้อมูล</div>';
+        document.getElementById('ageBars').innerHTML = '<div class="empty-state">ยังไม่มีข้อมูล</div>';
+        document.getElementById('vipLeaderboard').innerHTML = '<div class="empty-state">ยังไม่มีข้อมูล</div>';
+        document.getElementById('atRiskList').innerHTML = '<div class="empty-state">ยังไม่มีข้อมูล</div>';
+        return;
+      }
+
+      // ===== 1. KPI OVERVIEW =====
+      const currentMonthKey = monthKey(now);
+      const newThisMonth = customers.filter(c => c.createdDate && monthKey(new Date(c.createdDate)) === currentMonthKey).length;
+      const totalPointsOutstanding = customers.reduce((sum, c) => sum + (c.points || 0), 0);
+      const avgPoints = Math.round(totalPointsOutstanding / total);
+
+      const txThisMonth = transactions.filter(t => monthKey(new Date(t.date)) === currentMonthKey);
+      const pointsIssued = txThisMonth.filter(t => t.amount > 0).reduce((sum, t) => sum + t.amount, 0);
+      const pointsRedeemed = Math.abs(txThisMonth.filter(t => t.amount < 0).reduce((sum, t) => sum + t.amount, 0));
+
+      const kpiHTML = `
+        <div class="kpi-card accent-blue">
+          <div class="kpi-label">สมาชิกทั้งหมด</div>
+          <div class="kpi-value">${total.toLocaleString()}</div>
+        </div>
+        <div class="kpi-card accent-green">
+          <div class="kpi-label">สมาชิกใหม่เดือนนี้</div>
+          <div class="kpi-value">${newThisMonth.toLocaleString()}</div>
+        </div>
+        <div class="kpi-card accent-gold">
+          <div class="kpi-label">คะแนนค้างทั้งหมด<br/>(Liability)</div>
+          <div class="kpi-value">${totalPointsOutstanding.toLocaleString()}</div>
+        </div>
+        <div class="kpi-card accent-purple">
+          <div class="kpi-label">คะแนนเฉลี่ย/คน</div>
+          <div class="kpi-value">${avgPoints.toLocaleString()}</div>
+        </div>
+        <div class="kpi-card accent-green">
+          <div class="kpi-label">คะแนนแจกเดือนนี้</div>
+          <div class="kpi-value">+${pointsIssued.toLocaleString()}</div>
+        </div>
+        <div class="kpi-card accent-red">
+          <div class="kpi-label">คะแนนใช้/ลดเดือนนี้</div>
+          <div class="kpi-value">-${pointsRedeemed.toLocaleString()}</div>
+        </div>
+      `;
+      document.getElementById('kpiGrid').innerHTML = kpiHTML;
+
+      // ===== 2. MEMBER GROWTH (6 เดือนล่าสุด) =====
+      const months = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months.push({ key: monthKey(d), label: THAI_MONTHS_SHORT[d.getMonth()] });
+      }
+      const growthCounts = months.map(m =>
+        customers.filter(c => c.createdDate && monthKey(new Date(c.createdDate)) === m.key).length
+      );
+      const maxGrowth = Math.max(...growthCounts, 1);
+      const growthHTML = months.map((m, i) => {
+        const count = growthCounts[i];
+        const heightPct = Math.max((count / maxGrowth) * 100, count > 0 ? 8 : 2);
+        return `
+          <div class="bar-col">
+            <div class="bar-value">${count > 0 ? count : ''}</div>
+            <div class="bar-fill" style="height: ${heightPct}%;"></div>
+            <div class="bar-label">${m.label}</div>
+          </div>
+        `;
+      }).join('');
+      document.getElementById('growthChart').innerHTML = growthHTML;
+
+      // ===== 3. TIER DISTRIBUTION (+ Liability ต่อ Tier) =====
+      const tierData = { 'Silver': { count: 0, points: 0, color: '#8a8a8a' }, 'Gold': { count: 0, points: 0, color: '#D4AF37' }, 'Platinum': { count: 0, points: 0, color: '#1a1a1a' } };
+      customers.forEach(c => {
+        const tier = getTier(c.points, c.tierOverride);
+        tierData[tier.name].count++;
+        tierData[tier.name].points += (c.points || 0);
+      });
+      const tierHTML = Object.entries(tierData).map(([name, d]) => {
+        const pct = Math.round((d.count / total) * 100);
+        return `
+          <div class="hbar-row">
+            <div class="hbar-top">
+              <span class="hbar-name">${name}</span>
+              <span class="hbar-stat">${d.count} คน (${pct}%) · คะแนนค้าง ${d.points.toLocaleString()}</span>
+            </div>
+            <div class="hbar-track">
+              <div class="hbar-fill" style="width: ${pct}%; background: ${d.color};"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      document.getElementById('tierBars').innerHTML = tierHTML;
+
+      // ===== 4. GENDER =====
+      const genderLabels = { male: 'ชาย', female: 'หญิง', other: 'ไม่ระบุ' };
+      const genderColors = { male: '#007AFF', female: '#FF2D55', other: '#8E8E93' };
+      const genderHTML = Object.keys(genderLabels).map(g => {
+        const count = customers.filter(c => c.gender === g).length;
+        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+        return `
+          <div class="hbar-row">
+            <div class="hbar-top">
+              <span class="hbar-name">${genderLabels[g]}</span>
+              <span class="hbar-stat">${count} คน (${pct}%)</span>
+            </div>
+            <div class="hbar-track">
+              <div class="hbar-fill" style="width: ${pct}%; background: ${genderColors[g]};"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      document.getElementById('genderBars').innerHTML = genderHTML;
+
+      // ===== 5. AGE GROUP =====
       const ageGroups = {};
       customers.forEach(c => {
         const ageGroup = c.dob ? getAgeGroup(c.dob) : (c.ageGroup || 'ไม่ระบุ');
         ageGroups[ageGroup] = (ageGroups[ageGroup] || 0) + 1;
       });
-      
       const ageOrder = ['0-14', '15-24', '25-34', '35-44', '45-54', '55+', 'ไม่ระบุ'];
-      const ageHTML = ageOrder
-        .filter(age => ageGroups[age])
-        .map(age => {
-          const count = ageGroups[age];
-          const percent = Math.round(count/total*100);
-          return `
-            <div class="analytics-card">
-              <div class="analytics-label">${age}</div>
-              <div class="analytics-value">${count}</div>
-              <div class="analytics-percent">${percent}%</div>
-            </div>
-          `;
-        }).join('');
-      document.getElementById('ageGroupAnalytics').innerHTML = ageHTML;
-      
-      // Tier analytics
-      const tierCounts = { 'Silver': 0, 'Gold': 0, 'Platinum': 0 };
-      customers.forEach(c => {
-        const tier = getTier(c.points, c.tierOverride);
-        tierCounts[tier.name]++;
-      });
-      
-      const tierHTML = Object.entries(tierCounts).map(([tier, count]) => {
-        const percent = Math.round(count/total*100);
+      const ageHTML = ageOrder.filter(age => ageGroups[age]).map(age => {
+        const count = ageGroups[age];
+        const pct = Math.round((count / total) * 100);
         return `
-          <div class="analytics-card">
-            <div class="analytics-label">${tier}</div>
-            <div class="analytics-value">${count}</div>
-            <div class="analytics-percent">${percent}%</div>
+          <div class="hbar-row">
+            <div class="hbar-top">
+              <span class="hbar-name">${age} ปี</span>
+              <span class="hbar-stat">${count} คน (${pct}%)</span>
+            </div>
+            <div class="hbar-track">
+              <div class="hbar-fill" style="width: ${pct}%; background: #5AC8FA;"></div>
+            </div>
           </div>
         `;
       }).join('');
-      document.getElementById('tierAnalytics').innerHTML = tierHTML;
+      document.getElementById('ageBars').innerHTML = ageHTML;
+
+      // ===== 6. VIP LEADERBOARD (Top 10) =====
+      const sorted = [...customers].sort((a, b) => (b.points || 0) - (a.points || 0)).slice(0, 10);
+      const rankClass = (i) => i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+      const lbHTML = sorted.map((c, i) => {
+        const tier = getTier(c.points, c.tierOverride);
+        return `
+          <div class="leaderboard-item" onclick="selectCustomer('${c.id}')" style="cursor:pointer;">
+            <div class="lb-rank ${rankClass(i)}">${i + 1}</div>
+            <div class="lb-info">
+              <div class="lb-name">${c.name}</div>
+              <div class="lb-meta">${tier.name} · ID: ${c.id}</div>
+            </div>
+            <div class="lb-points">${(c.points || 0).toLocaleString()}</div>
+          </div>
+        `;
+      }).join('');
+      document.getElementById('vipLeaderboard').innerHTML = lbHTML || '<div class="empty-state">ยังไม่มีข้อมูล</div>';
+
+      // ===== 7. AT-RISK CUSTOMERS (ไม่มีความเคลื่อนไหว 60+ วัน) =====
+      const riskList = customers.map(c => {
+        const lastTx = lastActivityDate(c.id);
+        const refDate = lastTx || new Date(c.createdDate || now);
+        return { customer: c, days: daysSince(refDate) };
+      }).filter(r => r.days >= 60).sort((a, b) => b.days - a.days).slice(0, 15);
+
+      const riskHTML = riskList.map(r => `
+        <div class="risk-item" onclick="selectCustomer('${r.customer.id}')" style="cursor:pointer;">
+          <div>
+            <div class="risk-name">${r.customer.name}</div>
+            <div class="risk-meta">คะแนนคงเหลือ ${(r.customer.points || 0).toLocaleString()} · ${r.customer.phone || '-'}</div>
+          </div>
+          <div class="risk-badge">${r.days} วัน</div>
+        </div>
+      `).join('');
+      document.getElementById('atRiskList').innerHTML = riskHTML || '<div class="empty-state">✓ ไม่มีลูกค้าเสี่ยงหาย ทุกคนยังมีความเคลื่อนไหว</div>';
+
+      // Store for export
+      window._analyticsSnapshot = { total, newThisMonth, totalPointsOutstanding, avgPoints, pointsIssued, pointsRedeemed, tierData, riskList, sorted };
+    }
+
+    function exportAnalyticsReport() {
+      if (!window._analyticsSnapshot) { loadAnalytics(); }
+      const s = window._analyticsSnapshot;
+      const now = new Date();
+      const lines = [];
+
+      lines.push('THE VIEW GROUP - Business Dashboard Report');
+      lines.push('วันที่ออกรายงาน,' + now.toLocaleDateString('th-TH'));
+      lines.push('');
+      lines.push('=== ภาพรวม ===');
+      lines.push('สมาชิกทั้งหมด,' + s.total);
+      lines.push('สมาชิกใหม่เดือนนี้,' + s.newThisMonth);
+      lines.push('คะแนนค้างทั้งหมด (Liability),' + s.totalPointsOutstanding);
+      lines.push('คะแนนเฉลี่ย/คน,' + s.avgPoints);
+      lines.push('คะแนนแจกเดือนนี้,' + s.pointsIssued);
+      lines.push('คะแนนใช้/ลดเดือนนี้,' + s.pointsRedeemed);
+      lines.push('');
+      lines.push('=== สัดส่วนระดับสมาชิก ===');
+      lines.push('Tier,จำนวนคน,คะแนนค้าง');
+      Object.entries(s.tierData).forEach(([name, d]) => {
+        lines.push(`${name},${d.count},${d.points}`);
+      });
+      lines.push('');
+      lines.push('=== VIP Top 10 ===');
+      lines.push('อันดับ,ชื่อ,ID,คะแนน,Tier');
+      s.sorted.forEach((c, i) => {
+        const tier = getTier(c.points, c.tierOverride);
+        lines.push(`${i + 1},"${c.name}",${c.id},${c.points},${tier.name}`);
+      });
+      lines.push('');
+      lines.push('=== ลูกค้าเสี่ยงหาย (60+ วัน) ===');
+      lines.push('ชื่อ,เบอร์โทร,คะแนน,จำนวนวันที่ไม่มีความเคลื่อนไหว');
+      s.riskList.forEach(r => {
+        lines.push(`"${r.customer.name}",${r.customer.phone || '-'},${r.customer.points},${r.days}`);
+      });
+
+      const csvContent = '\uFEFF' + lines.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `theview-dashboard-report-${now.toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     function exportData() {
