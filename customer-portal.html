@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>THE VIEW - Loyalty Portal</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding-bottom: 2rem;
+    }
+    
+    .container {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+    
+    header {
+      text-align: center;
+      color: white;
+      margin-bottom: 2rem;
+      margin-top: 1rem;
+    }
+    
+    .logo {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    
+    .tagline {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    
+    .mode {
+      display: none;
+    }
+    
+    .mode.active {
+      display: block;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 6px;
+    }
+    
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-family: inherit;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+    
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+      border: 1px solid #ddd;
+    }
+    
+    .dashboard {
+      text-align: center;
+    }
+    
+    .welcome {
+      font-size: 20px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 1.5rem;
+    }
+    
+    .tier-badge {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    
+    .tier-silver {
+      background: #e8e8e8;
+      color: #666;
+    }
+    
+    .tier-gold {
+      background: #fff3cd;
+      color: #856404;
+    }
+    
+    .tier-platinum {
+      background: #fff9e6;
+      color: #cc9900;
+    }
+    
+    .points-display {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 2rem;
+      border-radius: 12px;
+      margin: 1.5rem 0;
+      text-align: center;
+    }
+    
+    .points-label {
+      font-size: 13px;
+      opacity: 0.9;
+      margin-bottom: 0.5rem;
+    }
+    
+    .points-value {
+      font-size: 48px;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    
+    .points-note {
+      font-size: 12px;
+      opacity: 0.85;
+    }
+    
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 1.5rem 0;
+    }
+    
+    .info-card {
+      background: #f9f9f9;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+      border-left: 3px solid #667eea;
+    }
+    
+    .info-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    
+    .info-value {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .birthday-alert {
+      background: #fff9e6;
+      border: 1px solid #ffc107;
+      border-radius: 8px;
+      padding: 12px;
+      margin: 1rem 0;
+      text-align: center;
+    }
+    
+    .birthday-alert.soon {
+      background: #fff3cd;
+      border-color: #ffc107;
+    }
+    
+    .birthday-icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+    
+    .history-item {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      font-size: 13px;
+    }
+    
+    .history-item:last-child {
+      border-bottom: none;
+    }
+    
+    .history-date {
+      color: #666;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    
+    .history-action {
+      color: #333;
+      margin-bottom: 4px;
+    }
+    
+    .history-points {
+      font-weight: 600;
+      color: #667eea;
+    }
+    
+    .promo-card {
+      background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+      border: 1px solid #667eea;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .promo-title {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 4px;
+    }
+    
+    .promo-desc {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    .promo-countdown {
+      font-size: 12px;
+      color: #667eea;
+      font-weight: 600;
+    }
+    
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 1rem;
+    }
+    
+    .btn-icon {
+      padding: 12px;
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .error {
+      background: #fee;
+      color: #c00;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-size: 13px;
+    }
+    
+    .success {
+      background: #efe;
+      color: #060;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-size: 13px;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: #666;
+    }
+    
+    .loader {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #999;
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- LOGIN MODE -->
+    <div id="login-mode" class="mode active">
+      <header>
+        <div class="logo">🌟 THE VIEW</div>
+        <div class="tagline">Loyalty Portal</div>
+      </header>
+      
+      <div class="card">
+        <h2 style="text-align: center; margin-bottom: 1.5rem; color: #333; font-size: 20px;">
+          เช็คคะแนนของคุณ
+        </h2>
+        
+        <div id="loginError" class="error" style="display: none;"></div>
+        
+        <div class="form-group">
+          <label>เบอร์โทรศัพท์</label>
+          <input type="tel" id="loginPhone" placeholder="081-234-5678" />
+        </div>
+        
+        <button class="btn-primary" onclick="requestOTP()">ส่ง OTP</button>
+        
+        <div style="text-align: center; margin-top: 1rem; font-size: 12px; color: #666;">
+          โค้ด OTP จะถูกส่งไป SMS <br/>
+          (ระบบจำลอง: ป้อน 000000)
+        </div>
+      </div>
+      
+      <div class="footer">
+        THE VIEW GROUP • ระบบสมาชิก Loyalty
+      </div>
+    </div>
+
+    <!-- OTP MODE -->
+    <div id="otp-mode" class="mode">
+      <header>
+        <div class="logo">🌟 THE VIEW</div>
+        <div class="tagline">ยืนยัน OTP</div>
+      </header>
+      
+      <div class="card">
+        <h2 style="text-align: center; margin-bottom: 1.5rem; color: #333; font-size: 20px;">
+          กรอก OTP
+        </h2>
+        
+        <div style="text-align: center; margin-bottom: 1.5rem; font-size: 13px; color: #666;">
+          ป้อนโค้ด 6 หลักที่ส่งไป SMS <br/>
+          <span id="otpPhone"></span>
+        </div>
+        
+        <div id="otpError" class="error" style="display: none;"></div>
+        
+        <div class="form-group">
+          <label>OTP Code</label>
+          <input type="text" id="otpCode" placeholder="000000" maxlength="6" />
+        </div>
+        
+        <button class="btn-primary" onclick="verifyOTP()">ยืนยัน</button>
+        
+        <button class="btn-secondary" style="margin-top: 0.5rem;" onclick="switchMode('login')">
+          ← เปลี่ยนเบอร์
+        </button>
+        
+        <div style="text-align: center; margin-top: 1rem; font-size: 12px; color: #666;">
+          ⏱️ <span id="otpTimer">5:00</span> นาที
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD MODE -->
+    <div id="dashboard-mode" class="mode">
+      <header>
+        <div class="logo">🌟 THE VIEW</div>
+        <div class="tagline">Loyalty Portal</div>
+      </header>
+      
+      <div class="card dashboard">
+        <div class="welcome">
+          👋 สวัสดี <span id="dashName">สมชาย</span>!
+        </div>
+        
+        <div id="tierDisplay"></div>
+        
+        <div class="points-display">
+          <div class="points-label">คะแนนปัจจุบัน</div>
+          <div class="points-value" id="dashPoints">450</div>
+          <div class="points-note">
+            💡 <span id="pointsNote"></span>
+          </div>
+        </div>
+        
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="info-label">อายุ</div>
+            <div class="info-value" id="dashAge">35</div>
+          </div>
+          <div class="info-card">
+            <div class="info-label">Tier</div>
+            <div class="info-value" id="dashTier">Gold</div>
+          </div>
+          <div class="info-card">
+            <div class="info-label">ส่วนลด</div>
+            <div class="info-value" id="dashDiscount">10%</div>
+          </div>
+          <div class="info-card">
+            <div class="info-label">วันเกิด</div>
+            <div class="info-value" id="dashBirthdayDays">30 วัน</div>
+          </div>
+        </div>
+        
+        <div id="birthdayAlert"></div>
+        
+        <div style="text-align: left; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #eee;">
+          <h3 style="font-size: 14px; margin-bottom: 1rem; color: #333;">📋 ข้อมูล</h3>
+          <div style="font-size: 13px; line-height: 1.8; color: #666;">
+            <div><strong>เบอร์:</strong> <span id="dashPhone">081-234-5678</span></div>
+            <div><strong>เพศ:</strong> <span id="dashGender">ชาย</span></div>
+            <div><strong>วันเกิด:</strong> <span id="dashDOB">15 มีนาคม 2532</span></div>
+            <div><strong>ID:</strong> <span id="dashID">1001</span></div>
+          </div>
+        </div>
+        
+        <div class="action-grid">
+          <button class="btn-secondary btn-icon" onclick="switchMode('history')">
+            <span>📜</span>
+            ประวัติ
+          </button>
+          <button class="btn-secondary btn-icon" onclick="switchMode('promo')">
+            <span>🎁</span>
+            โปรโมชั่น
+          </button>
+          <button class="btn-secondary btn-icon" onclick="shareWhatsApp()">
+            <span>💬</span>
+            WhatsApp
+          </button>
+          <button class="btn-secondary btn-icon" onclick="logout()">
+            <span>🚪</span>
+            ออก
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY MODE -->
+    <div id="history-mode" class="mode">
+      <header>
+        <div class="logo">🌟 THE VIEW</div>
+        <div class="tagline">ประวัติการสะสม</div>
+      </header>
+      
+      <div class="card">
+        <h2 style="margin-bottom: 1rem; color: #333; font-size: 18px;">📜 ประวัติ</h2>
+        
+        <div id="historyList" style="max-height: 400px; overflow-y: auto;"></div>
+        
+        <button class="btn-secondary" style="margin-top: 1rem;" onclick="switchMode('dashboard')">
+          ← กลับ
+        </button>
+      </div>
+    </div>
+
+    <!-- PROMO MODE -->
+    <div id="promo-mode" class="mode">
+      <header>
+        <div class="logo">🌟 THE VIEW</div>
+        <div class="tagline">ข้อเสนอพิเศษ</div>
+      </header>
+      
+      <div class="card">
+        <h2 style="margin-bottom: 1rem; color: #333; font-size: 18px;">🎁 ข้อเสนอพิเศษ</h2>
+        
+        <div id="promoList"></div>
+        
+        <button class="btn-secondary" style="margin-top: 1rem;" onclick="switchMode('dashboard')">
+          ← กลับ
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let currentCustomer = null;
+    let otpCode = null;
+    let otpPhone = null;
+    let otpTimer = null;
+
+    function switchMode(mode) {
+      document.querySelectorAll('.mode').forEach(el => el.classList.remove('active'));
+      document.getElementById(mode + '-mode').classList.add('active');
+    }
+
+    function getTier(points) {
+      if (points >= 150000) return { name: 'Platinum', discount: '12-15%', color: '#FFD700' };
+      if (points >= 50000) return { name: 'Gold', discount: '7-10%', color: '#FF9500' };
+      return { name: 'Silver', discount: '3-5%', color: '#666' };
+    }
+
+    function calculateAge(dob) {
+      const today = new Date();
+      const birthDate = new Date(dob);
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      return age;
+    }
+
+    function getDaysUntilBirthday(dob) {
+      const today = new Date();
+      const birthDate = new Date(dob);
+      const thisYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+      
+      if (thisYearBirthday < today) {
+        thisYearBirthday.setFullYear(today.getFullYear() + 1);
+      }
+      
+      const daysLeft = Math.ceil((thisYearBirthday - today) / (1000 * 60 * 60 * 24));
+      return daysLeft;
+    }
+
+    function requestOTP() {
+      const phone = document.getElementById('loginPhone').value.replace(/[-]/g, '');
+      const errorEl = document.getElementById('loginError');
+      errorEl.style.display = 'none';
+      
+      if (!/^\d{10}$/.test(phone)) {
+        errorEl.textContent = '❌ เบอร์โทรไม่ถูกต้อง';
+        errorEl.style.display = 'block';
+        return;
+      }
+      
+      // Simulate OTP (in real: send via SMS API)
+      otpCode = '000000';
+      otpPhone = phone;
+      
+      document.getElementById('otpPhone').textContent = '08' + phone.slice(2, 4) + '-***-' + phone.slice(8);
+      
+      switchMode('otp');
+      startOTPTimer();
+    }
+
+    function startOTPTimer() {
+      let timeLeft = 300; // 5 minutes
+      
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        document.getElementById('otpTimer').textContent = 
+          `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        if (timeLeft > 0) {
+          timeLeft--;
+          otpTimer = setTimeout(updateTimer, 1000);
+        } else {
+          switchMode('login');
+        }
+      }
+      
+      updateTimer();
+    }
+
+    function verifyOTP() {
+      const enteredOTP = document.getElementById('otpCode').value;
+      const errorEl = document.getElementById('otpError');
+      errorEl.style.display = 'none';
+      
+      if (enteredOTP !== otpCode) {
+        errorEl.textContent = '❌ OTP ไม่ถูกต้อง';
+        errorEl.style.display = 'block';
+        return;
+      }
+      
+      clearTimeout(otpTimer);
+      loadCustomerData(otpPhone);
+    }
+
+    function loadCustomerData(phone) {
+      // Load from localStorage (shared with admin)
+      const customers = JSON.parse(localStorage.getItem('loyalty_customers')) || [];
+      currentCustomer = customers.find(c => c.phone === phone || c.phone === '0' + phone.slice(1));
+      
+      if (!currentCustomer) {
+        document.getElementById('otpError').textContent = '❌ ไม่พบข้อมูลสมาชิก';
+        document.getElementById('otpError').style.display = 'block';
+        return;
+      }
+      
+      displayDashboard();
+      switchMode('dashboard');
+    }
+
+    function displayDashboard() {
+      const tier = getTier(currentCustomer.points);
+      const age = calculateAge(currentCustomer.dob);
+      const daysUntilBday = getDaysUntilBirthday(currentCustomer.dob);
+      
+      // Fill data
+      document.getElementById('dashName').textContent = currentCustomer.name.split(' ')[0];
+      document.getElementById('dashPoints').textContent = currentCustomer.points.toLocaleString();
+      document.getElementById('dashAge').textContent = age;
+      document.getElementById('dashTier').textContent = tier.name;
+      document.getElementById('dashDiscount').textContent = tier.discount;
+      document.getElementById('dashBirthdayDays').textContent = daysUntilBday + ' วัน';
+      
+      document.getElementById('dashPhone').textContent = currentCustomer.phone;
+      const genderText = { 'male': 'ชาย', 'female': 'หญิง', 'other': 'ไม่ระบุ' }[currentCustomer.gender] || '-';
+      document.getElementById('dashGender').textContent = genderText;
+      
+      const dobDate = new Date(currentCustomer.dob);
+      const dobDisplay = dobDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+      document.getElementById('dashDOB').textContent = dobDisplay;
+      document.getElementById('dashID').textContent = currentCustomer.id;
+      
+      // Tier badge
+      const tierClass = tier.name === 'Platinum' ? 'tier-platinum' : tier.name === 'Gold' ? 'tier-gold' : 'tier-silver';
+      document.getElementById('tierDisplay').innerHTML = `
+        <div class="tier-badge ${tierClass}">
+          ⭐ ${tier.name} Member (ลด ${tier.discount})
+        </div>
+      `;
+      
+      // Points note
+      const pointsNeeded = tier.name === 'Silver' ? 50000 - currentCustomer.points : 
+                          tier.name === 'Gold' ? 150000 - currentCustomer.points : 0;
+      if (pointsNeeded > 0) {
+        document.getElementById('pointsNote').textContent = `ต้องสะสมอีก ${pointsNeeded.toLocaleString()} เพื่อขึ้น tier ถัดไป`;
+      } else {
+        document.getElementById('pointsNote').textContent = `คุณอยู่ in tier สูงสุด! 🎉`;
+      }
+      
+      // Birthday alert
+      const birthdayAlert = document.getElementById('birthdayAlert');
+      if (daysUntilBday === 0) {
+        birthdayAlert.innerHTML = `
+          <div class="birthday-alert soon">
+            <div class="birthday-icon">🎂🎉</div>
+            <div style="font-weight: 600; color: #cc9900;">วันเกิดวันนี้!!</div>
+            <div style="font-size: 12px; color: #856404;">ซ่อมรถวันนี้ ได้ส่วนลด 50% 🎁</div>
+          </div>
+        `;
+      } else if (daysUntilBday <= 7) {
+        birthdayAlert.innerHTML = `
+          <div class="birthday-alert soon">
+            <div class="birthday-icon">🎂</div>
+            <div style="font-weight: 600; color: #cc9900;">วันเกิดใกล้มา!</div>
+            <div style="font-size: 12px; color: #856404;">อีก ${daysUntilBday} วัน • ส่วนลด 50% 🎁</div>
+          </div>
+        `;
+      } else {
+        birthdayAlert.innerHTML = '';
+      }
+      
+      loadHistory();
+      loadPromo();
+    }
+
+    function loadHistory() {
+      const historyList = document.getElementById('historyList');
+      
+      // Sample history (in real: fetch from admin data)
+      const sampleHistory = [
+        { date: '2025-01-15', action: 'ซ่อมรถ', points: 100, type: 'add' },
+        { date: '2025-01-08', action: 'ใช้คะแนนลด 300 บาท', points: -300, type: 'redeem' },
+        { date: '2025-01-01', action: 'โบนัสวันเกิด', points: 50, type: 'bonus' },
+      ];
+      
+      historyList.innerHTML = sampleHistory.map(h => `
+        <div class="history-item">
+          <div class="history-date">📅 ${h.date}</div>
+          <div class="history-action">${h.action}</div>
+          <div class="history-points">
+            ${h.type === 'add' ? '➕' : h.type === 'bonus' ? '🎁' : '➖'} 
+            ${h.points > 0 ? '+' : ''}${h.points} คะแนน
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function loadPromo() {
+      const promoList = document.getElementById('promoList');
+      const tier = getTier(currentCustomer.points);
+      const daysUntilBday = getDaysUntilBirthday(currentCustomer.dob);
+      
+      let promos = [];
+      
+      if (daysUntilBday <= 30 && daysUntilBday >= 0) {
+        promos.push({
+          title: '🎂 วันเกิด',
+          desc: 'ส่วนลด 50% ค่าซ่อม',
+          countdown: `${daysUntilBday} วัน`
+        });
+      }
+      
+      if (tier.name === 'Gold' || tier.name === 'Platinum') {
+        promos.push({
+          title: '⭐ VIP Member',
+          desc: 'ฟรี! ตรวจเช็ค + ทำความสะอาด',
+          countdown: 'ตลอด'
+        });
+      }
+      
+      promos.push({
+        title: '💝 Redeem',
+        desc: `${Math.min(currentCustomer.points, 500)} คะแนน = ลด ${Math.min(currentCustomer.points, 500)} บาท`,
+        countdown: 'พร้อมใช้'
+      });
+      
+      promoList.innerHTML = promos.map(p => `
+        <div class="promo-card">
+          <div class="promo-title">${p.title}</div>
+          <div class="promo-desc">${p.desc}</div>
+          <div class="promo-countdown">⏰ ${p.countdown}</div>
+        </div>
+      `).join('');
+    }
+
+    function shareWhatsApp() {
+      const msg = `🎉 สวัสดี! ฉันเป็นสมาชิก ${getTier(currentCustomer.points).name} ที่ THE VIEW ยล้อม\n\nคะแนนปัจจุบัน: ${currentCustomer.points} 🌟\nมาซ่อมรถด้วยกันได้นะ! 💚\n\nhttps://loyalty.theviewgroup.com`;
+      const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+      window.open(url, '_blank');
+    }
+
+    function logout() {
+      currentCustomer = null;
+      otpPhone = null;
+      document.getElementById('loginPhone').value = '';
+      document.getElementById('otpCode').value = '';
+      switchMode('login');
+    }
+
+    // Initialize
+    loadHistory();
+    loadPromo();
+  </script>
+</body>
+</html>

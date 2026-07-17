@@ -1,0 +1,23 @@
+{
+  "name": "the-view-loyalty",
+  "version": "1.0.0",
+  "description": "THE VIEW GROUP Loyalty Management System",
+  "main": "index.html",
+  "scripts": {
+    "start": "http-server",
+    "dev": "http-server -p 8000",
+    "build": "echo 'Build complete'",
+    "test": "echo 'Testing...'"
+  },
+  "keywords": [
+    "loyalty",
+    "points",
+    "membership",
+    "rewards"
+  ],
+  "author": "THE VIEW GROUP",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}

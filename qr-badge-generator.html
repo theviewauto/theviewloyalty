@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>THE VIEW - QR Badge Generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      padding: 2rem 0;
+    }
+    
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+      color: #333;
+    }
+    
+    .controls {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #333;
+    }
+    
+    input, select {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-family: inherit;
+    }
+    
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+    
+    .badge {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      text-align: center;
+      page-break-inside: avoid;
+    }
+    
+    .badge-header {
+      font-size: 24px;
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+    
+    .badge-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+    
+    .badge-tier {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
+    
+    .tier-silver {
+      background: #e8e8e8;
+      color: #666;
+    }
+    
+    .tier-gold {
+      background: #fff3cd;
+      color: #856404;
+    }
+    
+    .tier-platinum {
+      background: #fff9e6;
+      color: #cc9900;
+    }
+    
+    .badge-qr {
+      margin: 15px 0;
+      padding: 15px;
+      background: #f9f9f9;
+      border-radius: 6px;
+    }
+    
+    .badge-qr canvas {
+      margin: 0 auto;
+      display: block;
+    }
+    
+    .badge-id {
+      font-size: 11px;
+      color: #666;
+      margin-top: 8px;
+      word-break: break-all;
+    }
+    
+    .badge-info {
+      font-size: 11px;
+      color: #666;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #eee;
+      line-height: 1.6;
+    }
+    
+    .badge-discount {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    
+    .button-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    
+    button {
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+    
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+    
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      .controls, .button-group {
+        display: none;
+      }
+      .preview-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1cm;
+        margin: 0;
+      }
+      .badge {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        width: 100%;
+        page-break-inside: avoid;
+      }
+    }
+    
+    .info-box {
+      background: #f0f7ff;
+      border-left: 4px solid #667eea;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 4px;
+    }
+    
+    .info-box strong {
+      color: #667eea;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎫 THE VIEW - QR Badge Generator</h1>
+    
+    <div class="info-box">
+      <strong>📋 วิธีใช้:</strong> ป้อนข้อมูลสมาชิก → แสดงตัวอย่าง → พิมพ์บัตร
+    </div>
+    
+    <div class="controls">
+      <h2 style="margin-bottom: 1.5rem; font-size: 18px;">📝 ข้อมูลสมาชิก</h2>
+      
+      <div class="form-group">
+        <label>ชื่อ-นามสกุล</label>
+        <input type="text" id="memberName" value="สมชาย สุขไทย" />
+      </div>
+      
+      <div class="form-group">
+        <label>ID สมาชิก</label>
+        <input type="text" id="memberId" value="1001" />
+      </div>
+      
+      <div class="form-group">
+        <label>Tier</label>
+        <select id="memberTier">
+          <option value="Silver">Silver (ลด 3-5%)</option>
+          <option value="Gold" selected>Gold (ลด 7-10%)</option>
+          <option value="Platinum">Platinum (ลด 12-15%)</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>Discount Percentage</label>
+        <input type="text" id="memberDiscount" value="7-10%" />
+      </div>
+      
+      <div class="form-group">
+        <label>Phone (optional)</label>
+        <input type="tel" id="memberPhone" value="081-234-5678" />
+      </div>
+      
+      <div class="button-group">
+        <button class="btn-primary" onclick="generateBadge()">🎨 สร้างตัวอย่าง</button>
+        <button class="btn-primary" onclick="window.print()">🖨️ พิมพ์บัตร</button>
+        <button class="btn-secondary" onclick="downloadBadges()">💾 ดาวน์โหลด PDF</button>
+      </div>
+    </div>
+    
+    <div class="preview-grid" id="badgeContainer">
+      <!-- Badges will be generated here -->
+    </div>
+  </div>
+
+  <script>
+    function getTierClass(tier) {
+      switch(tier) {
+        case 'Gold':
+          return 'tier-gold';
+        case 'Platinum':
+          return 'tier-platinum';
+        default:
+          return 'tier-silver';
+      }
+    }
+
+    function generateBadge() {
+      const name = document.getElementById('memberName').value || 'ชื่อสมาชิก';
+      const id = document.getElementById('memberId').value || '1001';
+      const tier = document.getElementById('memberTier').value;
+      const discount = document.getElementById('memberDiscount').value;
+      const phone = document.getElementById('memberPhone').value;
+      
+      // Generate URL for customer portal
+      const portalURL = `https://loyalty.theviewgroup.com/customer?phone=${encodeURIComponent(phone || id)}`;
+      
+      const container = document.getElementById('badgeContainer');
+      container.innerHTML = '';
+      
+      // Create 3 badge designs
+      for (let i = 0; i < 3; i++) {
+        const badge = document.createElement('div');
+        badge.className = 'badge';
+        badge.innerHTML = `
+          <div class="badge-header">🌟 THE VIEW</div>
+          <div class="badge-name">${name}</div>
+          <div class="badge-tier ${getTierClass(tier)}">
+            ⭐ ${tier} Member
+          </div>
+          <div class="badge-discount">ลด ${discount}</div>
+          <div class="badge-qr">
+            <div id="qr-${i}"></div>
+            <div class="badge-id">ID: ${id}</div>
+          </div>
+          <div class="badge-info">
+            📱 Scan QR เพื่อเช็คคะแนน<br/>
+            💬 Call: THE VIEW<br/>
+            🕐 ซ่อมรถทำการ 08:00-18:00
+          </div>
+        `;
+        container.appendChild(badge);
+      }
+      
+      // Generate QR codes
+      for (let i = 0; i < 3; i++) {
+        new QRCode(document.getElementById(`qr-${i}`), {
+          text: portalURL,
+          width: 120,
+          height: 120,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.H
+        });
+      }
+    }
+
+    function downloadBadges() {
+      alert('📥 ฟีเจอร์ download กำลังพัฒนา\n\nใช้ Ctrl+P (or Cmd+P) → บันทึกเป็น PDF');
+    }
+
+    // Generate on load
+    generateBadge();
+  </script>
+</body>
+</html>

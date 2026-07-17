@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build || echo 'No build needed'",
+  "outputDirectory": ".",
+  "public": true,
+  "env": {
+    "NEXT_PUBLIC_API_URL": "@api_url"
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "$1"
+    },
+    {
+      "src": "/customer-portal",
+      "dest": "/customer-portal.html"
+    },
+    {
+      "src": "/admin",
+      "dest": "/loyalty_with_registration.html"
+    },
+    {
+      "src": "/badge",
+      "dest": "/qr-badge-generator.html"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        }
+      ]
+    }
+  ]
+}
