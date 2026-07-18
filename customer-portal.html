@@ -502,7 +502,6 @@
           <h3 style="font-size: 12px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 1rem; color: #6b5d3f;">ข้อมูลสมาชิก</h3>
           <div style="font-size: 13px; line-height: 1.9; color: #555;">
             <div><strong style="color:#1a1a1a;">เบอร์:</strong> <span id="dashPhone">081-234-5678</span></div>
-            <div><strong style="color:#1a1a1a;">เพศ:</strong> <span id="dashGender">ชาย</span></div>
             <div><strong style="color:#1a1a1a;">วันเกิด:</strong> <span id="dashDOB">15 มีนาคม 2532</span></div>
             <div><strong style="color:#1a1a1a;">รหัสสมาชิก:</strong> <span id="dashID">1001</span></div>
           </div>
@@ -748,8 +747,6 @@
       document.getElementById('dashTier').textContent = tier.name;
       
       document.getElementById('dashPhone').textContent = currentCustomer.phone;
-      const genderText = { 'male': 'ชาย', 'female': 'หญิง', 'other': 'ไม่ระบุ' }[currentCustomer.gender] || '-';
-      document.getElementById('dashGender').textContent = genderText;
       
       const dobDate = new Date(currentCustomer.dob);
       const dobDisplay = dobDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
