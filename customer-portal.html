@@ -600,11 +600,12 @@
       });
     }
 
-    async function API_getPromotions(customerId, tier) {
+    async function API_getPromotions(customerId, tier, birthMonth) {
       return await apiCall({
         action: 'getPromotions',
         customerId: customerId,
-        tier: tier
+        tier: tier,
+        birthMonth: birthMonth
       });
     }
 
@@ -831,9 +832,10 @@
     async function loadPromo() {
       const promoList = document.getElementById('promoList');
       const tier = getTier(currentCustomer.points, currentCustomer.tierOverride);
+      const birthMonth = currentCustomer.dob ? currentCustomer.dob.split('-')[1] : ''; // "01".."12"
 
       try {
-        const result = await API_getPromotions(currentCustomer.id, tier.name);
+        const result = await API_getPromotions(currentCustomer.id, tier.name, birthMonth);
         const promos = result.promotions || [];
 
         if (promos.length === 0) {
