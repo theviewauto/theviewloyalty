@@ -1309,7 +1309,7 @@
 
     async function createCustomer() {
       const name = document.getElementById('newName').value;
-      const phone = document.getElementById('newPhone').value;
+      const phone = document.getElementById('newPhone').value.replace(/[-\s]/g, ''); // normalize: remove - และ space
       const gender = document.getElementById('newGender').value;
       const dob = document.getElementById('newDOB').value;
       const pdpaConsent = document.getElementById('pdpaConsent').checked;
@@ -1328,8 +1328,8 @@
         return;
       }
       
-      // Validate phone
-      if (!/^\d{10}$/.test(phone.replace(/[-]/g, ''))) {
+      // Validate phone (10 หลัก)
+      if (!/^\d{10}$/.test(phone)) {
         errorEl.textContent = '❌ เบอร์โทรไม่ถูกต้อง (ใส่ 10 หลัก)';
         return;
       }
@@ -1346,9 +1346,9 @@
         const result = await API_createCustomer({
           id,
           name,
-          phone,
+          phone, // เบอร์โทรที่ normalize แล้ว (0812345678)
           gender,
-          dob,
+          dob,   // format: YYYY-MM-DD (คศ)
           pdpaConsent: true
         });
 
