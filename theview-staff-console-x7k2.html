@@ -662,6 +662,16 @@
         <div id="atRiskList"></div>
       </div>
 
+      <!-- PROMOTION ANALYTICS -->
+      <div class="dash-section">
+        <div class="dash-section-title">
+          🎁 การใช้โปรโมชั่น
+          <span class="dash-section-sub">ภาพรวมทั้งหมด</span>
+        </div>
+        <div class="kpi-grid" id="promoKpiGrid"></div>
+        <div id="promoBreakdown" style="margin-top: 1rem;"></div>
+      </div>
+
       <button class="btn-info" style="width: 100%; margin-top: 0.5rem;" onclick="exportAnalyticsReport()">📥 Export รายงานฉบับเต็ม (CSV)</button>
       <button class="btn-secondary" style="width: 100%; margin-top: 8px;" onclick="switchMode('home')">← กลับหน้าหลัก</button>
     </div>
@@ -731,6 +741,7 @@
         <select id="promoTargetType" onchange="togglePromoTargetInput()">
           <option value="customer">ลูกค้ารายบุคคล</option>
           <option value="tier">ตาม Tier (ส่งให้ทุกคนในระดับนั้น)</option>
+          <option value="birthday">ลูกค้าที่เกิดเดือนนี้ (ทุกคน)</option>
         </select>
       </div>
 
@@ -749,6 +760,26 @@
           <option value="Platinum">Platinum (ทุกคน)</option>
         </select>
       </div>
+
+      <div id="promoTargetBirthdayBox" class="form-group" style="display:none;">
+        <label>เลือกเดือนเกิด</label>
+        <select id="promoBirthMonthSelect">
+          <option value="01">มกราคม</option>
+          <option value="02">กุมภาพันธ์</option>
+          <option value="03">มีนาคม</option>
+          <option value="04">เมษายน</option>
+          <option value="05">พฤษภาคม</option>
+          <option value="06">มิถุนายน</option>
+          <option value="07">กรกฎาคม</option>
+          <option value="08">สิงหาคม</option>
+          <option value="09">กันยายน</option>
+          <option value="10">ตุลาคม</option>
+          <option value="11">พฤศจิกายน</option>
+          <option value="12">ธันวาคม</option>
+        </select>
+        <div style="font-size: 12px; color: #999; margin-top: 4px;">ค่าเริ่มต้น = เดือนปัจจุบัน (เปลี่ยนได้)</div>
+      </div>
+
 
       <div class="form-group">
         <label>หัวข้อโปรโมชั่น</label>
@@ -787,6 +818,7 @@
       </div>
 
       <h2 style="margin-top: 2rem;">📋 โปรโมชั่นทั้งหมด</h2>
+      <div class="kpi-grid" id="promoAdminKpiGrid" style="margin-bottom: 1rem;"></div>
       <div id="promoListAdmin"></div>
     </div>
 
@@ -968,6 +1000,13 @@
       });
     }
 
+    async function API_getAllRedemptions() {
+      return await apiCall({
+        action: 'getAllRedemptions',
+        token: ADMIN_TOKEN
+      });
+    }
+
     async function API_createPromotion(data) {
       return await apiPost({
         action: 'createPromotion',
@@ -998,11 +1037,20 @@
     async function initializeApp() {
       try {
         const custResult = await API_getAllCustomers();
+        if (custResult.error) {
+          console.error('getAllCustomers error:', custResult.error);
+          alert('⚠️ โหลดข้อมูลลูกค้าไม่สำเร็จ: ' + custResult.error + '\n\nตรวจสอบว่า ADMIN_TOKEN ในหน้าเว็บตรงกับใน Apps Script หรือไม่');
+          return;
+        }
         if (custResult.customers) customers = custResult.customers;
-        
+
         const txResult = await API_getAllTransactions();
-        if (txResult.transactions) transactions = txResult.transactions;
-        
+        if (txResult.error) {
+          console.error('getAllTransactions error:', txResult.error);
+        } else if (txResult.transactions) {
+          transactions = txResult.transactions;
+        }
+
         console.log('✓ Loaded', customers.length, 'customers and', transactions.length, 'transactions from Google Sheets');
       } catch (err) {
         console.error('Failed to load data:', err);
@@ -1063,7 +1111,11 @@
       else if (mode === 'list') loadCustomerList();
       else if (mode === 'analytics') loadAnalytics();
       else if (mode === 'birthday') loadBirthdayList();
-      else if (mode === 'promoAdmin') loadPromoListAdmin();
+      else if (mode === 'promoAdmin') {
+        loadPromoListAdmin();
+        const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+        document.getElementById('promoBirthMonthSelect').value = currentMonth;
+      }
     }
 
     function searchCustomers() {
@@ -1495,6 +1547,7 @@
     }
 
     function loadAnalytics() {
+      loadPromoAnalyticsForDashboard();
       const total = customers.length;
       const now = new Date();
       document.getElementById('analyticsUpdated').textContent =
@@ -1773,6 +1826,7 @@
       const type = document.getElementById('promoTargetType').value;
       document.getElementById('promoTargetCustomerBox').style.display = type === 'customer' ? 'block' : 'none';
       document.getElementById('promoTargetTierBox').style.display = type === 'tier' ? 'block' : 'none';
+      document.getElementById('promoTargetBirthdayBox').style.display = type === 'birthday' ? 'block' : 'none';
     }
 
     function togglePromoValueInput() {
@@ -1849,8 +1903,10 @@
           return;
         }
         targetValue = selectedPromoCustomer.id;
-      } else {
+      } else if (targetType === 'tier') {
         targetValue = document.getElementById('promoTierSelect').value;
+      } else {
+        targetValue = document.getElementById('promoBirthMonthSelect').value;
       }
 
       let value = '', code = '';
@@ -1894,13 +1950,122 @@
       }
     }
 
+    const PROMO_MONTH_NAMES = ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                                'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+
+    function promoTargetDesc(p) {
+      if (p.targetType === 'customer') {
+        const c = customers.find(x => x.id === p.targetValue);
+        return c ? `${c.name} (${c.phone})` : p.targetValue;
+      } else if (p.targetType === 'tier') {
+        return `Tier: ${p.targetValue} (ทุกคน)`;
+      }
+      return `เกิดเดือน: ${PROMO_MONTH_NAMES[parseInt(p.targetValue, 10)] || p.targetValue} (ทุกคน)`;
+    }
+
+    // คำนวณสถิติการใช้โปรโมชั่นทั้งหมด จาก promos + redemptions
+    function computePromoStats(promos, redemptions) {
+      const redemptionCountByPromo = {};
+      redemptions.forEach(r => {
+        redemptionCountByPromo[r.promotionId] = (redemptionCountByPromo[r.promotionId] || 0) + 1;
+      });
+
+      const perPromo = promos.map(p => {
+        const count = p.targetType === 'customer'
+          ? (p.status === 'used' ? 1 : 0)
+          : (redemptionCountByPromo[p.id] || 0);
+        const typeDesc = p.type === 'discount' ? `ส่วนลด ${p.value}%` : `คูปอง: ${p.code}`;
+        return { id: p.id, title: p.title, count: count, targetDesc: promoTargetDesc(p), typeDesc: typeDesc };
+      });
+
+      const totalPromos = promos.length;
+      const promosWithUsage = perPromo.filter(p => p.count > 0).length;
+      const totalRedemptions = perPromo.reduce((sum, p) => sum + p.count, 0);
+      const usageRate = totalPromos > 0 ? Math.round((promosWithUsage / totalPromos) * 100) : 0;
+      const discountCount = promos.filter(p => p.type === 'discount').length;
+      const couponCount = promos.filter(p => p.type === 'coupon').length;
+
+      perPromo.sort((a, b) => b.count - a.count);
+
+      return {
+        totalPromos: totalPromos, promosWithUsage: promosWithUsage, totalRedemptions: totalRedemptions,
+        usageRate: usageRate, discountCount: discountCount, couponCount: couponCount, perPromo: perPromo
+      };
+    }
+
+    function renderPromoKpiCards(stats, elementId) {
+      document.getElementById(elementId).innerHTML = `
+        <div class="kpi-card accent-purple">
+          <div class="kpi-label">โปรโมชั่นทั้งหมด</div>
+          <div class="kpi-value">${stats.totalPromos.toLocaleString()}</div>
+        </div>
+        <div class="kpi-card accent-green">
+          <div class="kpi-label">ถูกใช้ไปแล้ว (ครั้ง)</div>
+          <div class="kpi-value">${stats.totalRedemptions.toLocaleString()}</div>
+        </div>
+        <div class="kpi-card accent-blue">
+          <div class="kpi-label">อัตราการใช้งาน</div>
+          <div class="kpi-value">${stats.usageRate}%</div>
+        </div>
+        <div class="kpi-card accent-gold">
+          <div class="kpi-label">ส่วนลด / คูปอง</div>
+          <div class="kpi-value" style="font-size: 18px;">${stats.discountCount} / ${stats.couponCount}</div>
+        </div>
+      `;
+    }
+
+    function renderPromoBreakdown(stats, elementId) {
+      const el = document.getElementById(elementId);
+      if (stats.perPromo.length === 0) {
+        el.innerHTML = '<div class="empty-state">ยังไม่มีโปรโมชั่น</div>';
+        return;
+      }
+      el.innerHTML = stats.perPromo.map(p => {
+        const badge = p.count === 0 ? '⚪ ยังไม่มีคนใช้' : `🟢 ใช้ไปแล้ว ${p.count} ครั้ง`;
+        return `
+          <div class="hbar-row">
+            <div class="hbar-top">
+              <div class="hbar-name">${p.title}</div>
+              <div class="hbar-stat">${badge}</div>
+            </div>
+            <div style="font-size: 12px; color: #999;">${p.targetDesc} • ${p.typeDesc}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ดึงข้อมูลโปรโมชั่น + สถิติ ให้ Business Dashboard (เรียกแยกจาก loadAnalytics หลัก)
+    async function loadPromoAnalyticsForDashboard() {
+      try {
+        const [promoResult, redemptionResult] = await Promise.all([
+          API_getAllPromotions(),
+          API_getAllRedemptions()
+        ]);
+        const stats = computePromoStats(promoResult.promotions || [], redemptionResult.redemptions || []);
+        renderPromoKpiCards(stats, 'promoKpiGrid');
+        renderPromoBreakdown(stats, 'promoBreakdown');
+      } catch (err) {
+        document.getElementById('promoKpiGrid').innerHTML = '<div class="empty-state" style="grid-column: 1 / -1;">โหลดไม่สำเร็จ</div>';
+        document.getElementById('promoBreakdown').innerHTML = '';
+      }
+    }
+
     async function loadPromoListAdmin() {
       const listDiv = document.getElementById('promoListAdmin');
+      const kpiDiv = document.getElementById('promoAdminKpiGrid');
       listDiv.innerHTML = '<div style="text-align: center; padding: 1rem; color: #999;">⏳ กำลังโหลด...</div>';
+      kpiDiv.innerHTML = '';
 
       try {
-        const result = await API_getAllPromotions();
-        const promos = result.promotions || [];
+        const [promoResult, redemptionResult] = await Promise.all([
+          API_getAllPromotions(),
+          API_getAllRedemptions()
+        ]);
+        const promos = promoResult.promotions || [];
+        const redemptions = redemptionResult.redemptions || [];
+
+        const stats = computePromoStats(promos, redemptions);
+        renderPromoKpiCards(stats, 'promoAdminKpiGrid');
 
         if (promos.length === 0) {
           listDiv.innerHTML = '<div style="text-align: center; padding: 1rem; color: #999;">ยังไม่มีโปรโมชั่น</div>';
@@ -1908,10 +2073,7 @@
         }
 
         listDiv.innerHTML = promos.slice().reverse().map(p => {
-          const targetCustomer = p.targetType === 'customer' ? customers.find(c => c.id === p.targetValue) : null;
-          const targetDesc = p.targetType === 'customer'
-            ? (targetCustomer ? `${targetCustomer.name} (${targetCustomer.phone})` : p.targetValue)
-            : `Tier: ${p.targetValue} (ทุกคน)`;
+          const targetDesc = promoTargetDesc(p);
           const typeDesc = p.type === 'discount' ? `ส่วนลด ${p.value}%` : `คูปอง: ${p.code}`;
           const statusBadge = p.status === 'used' ? '✅ ใช้แล้ว' : '🟢 พร้อมใช้';
           const redeemBtn = p.status !== 'used'
@@ -1934,8 +2096,8 @@
     async function markPromoUsed(promotionId, targetType) {
       let customerId = null;
 
-      if (targetType === 'tier') {
-        // โปรตาม Tier ใช้ร่วมกันได้หลายคน ต้องระบุว่าลูกค้าคนไหนใช้ในครั้งนี้
+      if (targetType === 'tier' || targetType === 'birthday') {
+        // โปรตาม Tier/เดือนเกิด ใช้ร่วมกันได้หลายคน ต้องระบุว่าลูกค้าคนไหนใช้ในครั้งนี้
         const phone = prompt('พิมพ์เบอร์โทรลูกค้าที่ใช้โปรโมชั่นนี้:');
         if (!phone) return;
         const normalizedInput = phone.replace(/\D/g, '');
