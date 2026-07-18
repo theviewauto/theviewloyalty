@@ -1085,7 +1085,6 @@
     }
 
     function selectCustomer(id) {
-      stopScan();
       currentCustomer = customers.find(c => c.id === id);
       
       document.getElementById('detailName').textContent = currentCustomer.name;
