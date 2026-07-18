@@ -600,11 +600,16 @@
       });
     }
 
+    async function API_getPromotions(customerId, tier) {
+      return await apiCall({
+        action: 'getPromotions',
+        customerId: customerId,
+        tier: tier
+      });
+    }
+
     // ===================== MAIN APP =====================
     let currentCustomer = null;
-    let otpCode = null;
-    let otpPhone = null;
-    let otpTimer = null;
 
     function switchMode(mode) {
       document.querySelectorAll('.mode').forEach(el => el.classList.remove('active'));
@@ -823,42 +828,33 @@
       }
     }
 
-    function loadPromo() {
+    async function loadPromo() {
       const promoList = document.getElementById('promoList');
       const tier = getTier(currentCustomer.points, currentCustomer.tierOverride);
-      const daysUntilBday = getDaysUntilBirthday(currentCustomer.dob);
-      
-      let promos = [];
-      
-      if (daysUntilBday <= 30 && daysUntilBday >= 0) {
-        promos.push({
-          title: '🎂 วันเกิด',
-          desc: 'ส่วนลด 50% ค่าซ่อม',
-          countdown: `${daysUntilBday} วัน`
-        });
+
+      try {
+        const result = await API_getPromotions(currentCustomer.id, tier.name);
+        const promos = result.promotions || [];
+
+        if (promos.length === 0) {
+          promoList.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: #999; font-size: 14px;">ยังไม่มีโปรโมชั่นสำหรับคุณตอนนี้</div>';
+          return;
+        }
+
+        promoList.innerHTML = promos.map(p => {
+          const typeDesc = p.type === 'discount' ? `ส่วนลด ${p.value}%` : `โค้ด: ${p.code}`;
+          return `
+            <div class="promo-card">
+              <div class="promo-title">${p.title}</div>
+              <div class="promo-desc">${p.description}</div>
+              <div class="promo-countdown">🎫 ${typeDesc}</div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        promoList.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: #f44336; font-size: 14px;">⚠️ ไม่สามารถโหลดโปรโมชั่น</div>';
+        console.error('Error loading promo:', err);
       }
-      
-      if (tier.name === 'Gold' || tier.name === 'Platinum') {
-        promos.push({
-          title: '⭐ VIP Member',
-          desc: 'ฟรี! ตรวจเช็ค + ทำความสะอาด',
-          countdown: 'ตลอด'
-        });
-      }
-      
-      promos.push({
-        title: '💝 Redeem',
-        desc: `${Math.min(currentCustomer.points, 500)} คะแนน = ลด ${Math.min(currentCustomer.points, 500)} บาท`,
-        countdown: 'พร้อมใช้'
-      });
-      
-      promoList.innerHTML = promos.map(p => `
-        <div class="promo-card">
-          <div class="promo-title">${p.title}</div>
-          <div class="promo-desc">${p.desc}</div>
-          <div class="promo-countdown">⏰ ${p.countdown}</div>
-        </div>
-      `).join('');
     }
 
     function shareWhatsApp() {
@@ -869,15 +865,11 @@
 
     function logout() {
       currentCustomer = null;
-      otpPhone = null;
       document.getElementById('loginPhone').value = '';
-      document.getElementById('otpCode').value = '';
+      document.getElementById('dobInput').value = '';
       switchMode('login');
     }
 
-    // Initialize
-    loadHistory();
-    loadPromo();
   </script>
 </body>
 </html>
