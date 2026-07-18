@@ -442,39 +442,36 @@
       </div>
     </div>
 
-    <!-- OTP MODE -->
-    <div id="otp-mode" class="mode">
+    <!-- DOB VERIFICATION MODE -->
+    <div id="dob-mode" class="mode">
       <header>
         <div class="logo">THE VIEW</div>
-        <div class="tagline">ยืนยัน OTP</div>
+        <div class="tagline">ยืนยันตัวตน</div>
       </header>
       
       <div class="card">
         <h2 style="text-align: center; margin-bottom: 1.5rem; color: #1a1a1a; font-size: 20px; font-family: 'Cormorant Garamond', serif; font-weight: 700;">
-          กรอก OTP
+          ยืนยันวันเดือนปีเกิด
         </h2>
         
         <div style="text-align: center; margin-bottom: 1.5rem; font-size: 13px; color: #666;">
-          ป้อนโค้ด 6 หลักที่ส่งไป SMS <br/>
-          <span id="otpPhone"></span>
+          ยิ่ง <span id="dobCustomerName" style="font-weight: 600;"></span>
+          <br/>
+          พิมพ์วันเดือนปีเกิดของคุณ
         </div>
         
-        <div id="otpError" class="error" style="display: none;"></div>
+        <div id="dobError" class="error" style="display: none;"></div>
         
         <div class="form-group">
-          <label>OTP Code</label>
-          <input type="text" id="otpCode" placeholder="000000" maxlength="6" />
+          <label>วันเดือนปีเกิด (วว/ดด/ปปปป)</label>
+          <input type="text" id="dobInput" placeholder="15/01/1990" maxlength="10" />
         </div>
         
-        <button class="btn-primary" onclick="verifyOTP()">ยืนยัน</button>
+        <button class="btn-primary" onclick="verifyDOB()">ยืนยัน</button>
         
         <button class="btn-secondary" style="margin-top: 0.5rem;" onclick="switchMode('login')">
           ← เปลี่ยนเบอร์
         </button>
-        
-        <div style="text-align: center; margin-top: 1rem; font-size: 12px; color: #666;">
-          ⏱️ <span id="otpTimer">5:00</span> นาที
-        </div>
       </div>
     </div>
 
@@ -502,20 +499,8 @@
         
         <div class="info-grid">
           <div class="info-card">
-            <div class="info-label">อายุ</div>
-            <div class="info-value" id="dashAge">35</div>
-          </div>
-          <div class="info-card">
             <div class="info-label">Tier</div>
             <div class="info-value" id="dashTier">Gold</div>
-          </div>
-          <div class="info-card">
-            <div class="info-label">ส่วนลด</div>
-            <div class="info-value" id="dashDiscount">10%</div>
-          </div>
-          <div class="info-card">
-            <div class="info-label">วันเกิด</div>
-            <div class="info-value" id="dashBirthdayDays">30 วัน</div>
           </div>
         </div>
         
@@ -704,15 +689,14 @@
           return;
         }
         
-        // Found customer - proceed with OTP
-        otpCode = '000000';
-        otpPhone = phone;
+        // Found customer - proceed with DOB verification
+        currentCustomer = result.customer;
         
-        document.getElementById('otpPhone').textContent = '08' + phone.slice(2, 4) + '-***-' + phone.slice(8);
+        document.getElementById('dobCustomerName').textContent = currentCustomer.name;
         
         statusEl.textContent = '';
-        switchMode('otp');
-        startOTPTimer();
+        switchMode('dob');
+        document.getElementById('dobInput').focus();
       } catch (err) {
         errorEl.textContent = '❌ ข้อผิดพลาดเครือข่าย: ' + err.message;
         errorEl.style.display = 'block';
@@ -720,60 +704,42 @@
       }
     }
 
-    function startOTPTimer() {
-      let timeLeft = 300; // 5 minutes
-      
-      function updateTimer() {
-        const minutes = Math.floor(timeLeft / 60);
-        const seconds = timeLeft % 60;
-        document.getElementById('otpTimer').textContent = 
-          `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        
-        if (timeLeft > 0) {
-          timeLeft--;
-          otpTimer = setTimeout(updateTimer, 1000);
-        } else {
-          switchMode('login');
-        }
-      }
-      
-      updateTimer();
-    }
-
-    function verifyOTP() {
-      const enteredOTP = document.getElementById('otpCode').value;
-      const errorEl = document.getElementById('otpError');
+    function verifyDOB() {
+      const enteredDOB = document.getElementById('dobInput').value;
+      const errorEl = document.getElementById('dobError');
       errorEl.style.display = 'none';
       
-      if (enteredOTP !== otpCode) {
-        errorEl.textContent = '❌ OTP ไม่ถูกต้อง';
+      if (!enteredDOB) {
+        errorEl.textContent = '❌ กรุณาพิมพ์วันเดือนปีเกิด';
         errorEl.style.display = 'block';
         return;
       }
       
-      clearTimeout(otpTimer);
-      loadCustomerData(otpPhone);
+      // Parse input (วว/ดด/ปปปป) → compare with customer DOB
+      const dobParts = enteredDOB.split('/');
+      if (dobParts.length !== 3) {
+        errorEl.textContent = '❌ รูปแบบไม่ถูกต้อง (พิมพ์แบบ วว/ดด/ปปปป)';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      const [day, month, year] = dobParts;
+      const enteredDOBStr = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      
+      if (currentCustomer.dob !== enteredDOBStr) {
+        errorEl.textContent = '❌ วันเดือนปีเกิดไม่ถูกต้อง';
+        errorEl.style.display = 'block';
+        return;
+      }
+      
+      // DOB verified ✅
+      displayDashboard();
+      switchMode('dashboard');
     }
 
     async function loadCustomerData(phone) {
-      try {
-        // Load from Google Sheets API
-        const result = await API_getCustomerByPhone(phone);
-        
-        if (!result.found) {
-          document.getElementById('otpError').textContent = '❌ ไม่พบข้อมูลสมาชิก';
-          document.getElementById('otpError').style.display = 'block';
-          return;
-        }
-        
-        currentCustomer = result.customer;
-        
-        displayDashboard();
-        switchMode('dashboard');
-      } catch (err) {
-        document.getElementById('otpError').textContent = '❌ ข้อผิดพลาด: ' + err.message;
-        document.getElementById('otpError').style.display = 'block';
-      }
+      // Data already loaded in currentCustomer from requestOTP()
+      displayDashboard();
     }
 
     function displayDashboard() {
@@ -784,10 +750,7 @@
       // Fill data
       document.getElementById('dashName').textContent = currentCustomer.name.split(' ')[0];
       document.getElementById('dashPoints').textContent = currentCustomer.points.toLocaleString();
-      document.getElementById('dashAge').textContent = age;
       document.getElementById('dashTier').textContent = tier.name;
-      document.getElementById('dashDiscount').textContent = tier.discount;
-      document.getElementById('dashBirthdayDays').textContent = daysUntilBday + ' วัน';
       
       document.getElementById('dashPhone').textContent = currentCustomer.phone;
       const genderText = { 'male': 'ชาย', 'female': 'หญิง', 'other': 'ไม่ระบุ' }[currentCustomer.gender] || '-';
@@ -802,7 +765,7 @@
       const tierClass = tier.name === 'Platinum' ? 'tier-platinum' : tier.name === 'Gold' ? 'tier-gold' : 'tier-silver';
       document.getElementById('tierDisplay').innerHTML = `
         <div class="tier-badge ${tierClass}">
-          ⭐ ${tier.name} Member (ลด ${tier.discount})
+          ⭐ ${tier.name} Member
         </div>
       `;
       
