@@ -1026,6 +1026,16 @@
       });
     }
 
+    async function API_deletePromotion(promotionId) {
+      return await apiPost({
+        action: 'deletePromotion',
+        token: ADMIN_TOKEN,
+        data: {
+          promotionId: promotionId
+        }
+      });
+    }
+
     // ===================== MAIN APP =====================
     let customers = [];
     let transactions = [];
@@ -2079,12 +2089,13 @@
           const redeemBtn = p.status !== 'used'
             ? `<button style="width: auto; padding: 6px 14px; font-size: 12px; margin-top: 8px;" class="btn-success" onclick="markPromoUsed('${p.id}', '${p.targetType}')">ยืนยันการใช้</button>`
             : '';
+          const deleteBtn = `<button style="width: auto; padding: 6px 14px; font-size: 12px; margin-top: 8px; margin-left: 8px;" class="btn-danger" onclick="deletePromo('${p.id}')">🗑️ ลบ</button>`;
           return `
             <div class="customer-item" style="cursor: default;">
               <div class="customer-name">${p.title}</div>
               <div class="customer-meta">${p.description}</div>
               <div class="customer-meta">👤 ${targetDesc} • 🎫 ${typeDesc} • ${statusBadge}</div>
-              ${redeemBtn}
+              ${redeemBtn}${deleteBtn}
             </div>
           `;
         }).join('');
@@ -2118,6 +2129,21 @@
           loadPromoListAdmin();
         } else {
           alert('❌ ' + (result.error || 'ไม่สำเร็จ'));
+        }
+      } catch (err) {
+        alert('❌ ข้อผิดพลาด: ' + err.message);
+      }
+    }
+
+    async function deletePromo(promotionId) {
+      if (!confirm('ยืนยันลบโปรโมชั่นนี้? การลบไม่สามารถกู้คืนได้')) return;
+
+      try {
+        const result = await API_deletePromotion(promotionId);
+        if (result.success) {
+          loadPromoListAdmin();
+        } else {
+          alert('❌ ' + (result.error || 'ลบไม่สำเร็จ'));
         }
       } catch (err) {
         alert('❌ ข้อผิดพลาด: ' + err.message);
