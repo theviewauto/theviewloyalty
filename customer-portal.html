@@ -457,14 +457,14 @@
         <div style="text-align: center; margin-bottom: 1.5rem; font-size: 13px; color: #666;">
           ยิ่ง <span id="dobCustomerName" style="font-weight: 600;"></span>
           <br/>
-          พิมพ์วันเดือนปีเกิดของคุณ
+          พิมพ์วันเดือนปีเกิด (วดปพศ เช่น 30042539)
         </div>
         
         <div id="dobError" class="error" style="display: none;"></div>
         
         <div class="form-group">
           <label>วันเดือนปีเกิด (วว/ดด/ปปปป)</label>
-          <input type="text" id="dobInput" placeholder="15/01/1990" maxlength="10" />
+          <input type="text" id="dobInput" placeholder="30042539 (วดปพศ)" maxlength="8" />
         </div>
         
         <button class="btn-primary" onclick="verifyDOB()">ยืนยัน</button>
@@ -715,16 +715,19 @@
         return;
       }
       
-      // Parse input (วว/ดด/ปปปป) → compare with customer DOB
-      const dobParts = enteredDOB.split('/');
-      if (dobParts.length !== 3) {
-        errorEl.textContent = '❌ รูปแบบไม่ถูกต้อง (พิมพ์แบบ วว/ดด/ปปปป)';
+      // Parse input (วดปพศ 8 หลัก) → convert to YYYY-MM-DD (คศ)
+      if (enteredDOB.length !== 8 || !/^\d{8}$/.test(enteredDOB)) {
+        errorEl.textContent = '❌ รูปแบบไม่ถูกต้อง (พิมพ์แบบ วดปพศ เช่น 30042539)';
         errorEl.style.display = 'block';
         return;
       }
 
-      const [day, month, year] = dobParts;
-      const enteredDOBStr = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      const day = enteredDOB.substring(0, 2);
+      const month = enteredDOB.substring(2, 4);
+      const yearBuddhist = parseInt(enteredDOB.substring(4, 8));
+      const yearChristian = yearBuddhist - 543; // แปลง พศ → คศ
+      
+      const enteredDOBStr = `${yearChristian}-${month}-${day}`;
       
       if (currentCustomer.dob !== enteredDOBStr) {
         errorEl.textContent = '❌ วันเดือนปีเกิดไม่ถูกต้อง';
