@@ -819,6 +819,12 @@
 
       <h2 style="margin-top: 2rem;">📋 โปรโมชั่นทั้งหมด</h2>
       <div class="kpi-grid" id="promoAdminKpiGrid" style="margin-bottom: 1rem;"></div>
+
+      <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #555; margin-bottom: 12px; cursor: pointer;">
+        <input type="checkbox" id="promoHideInactive" checked onchange="renderPromoAdminList()" style="width: auto;">
+        ซ่อนโปรที่ปิดใช้งาน/ใช้ไปแล้ว
+      </label>
+
       <div id="promoListAdmin"></div>
     </div>
 
@@ -1032,6 +1038,17 @@
         token: ADMIN_TOKEN,
         data: {
           promotionId: promotionId
+        }
+      });
+    }
+
+    async function API_setPromotionStatus(promotionId, status) {
+      return await apiPost({
+        action: 'setPromotionStatus',
+        token: ADMIN_TOKEN,
+        data: {
+          promotionId: promotionId,
+          status: status
         }
       });
     }
@@ -2060,6 +2077,9 @@
       }
     }
 
+    let _lastPromos = [];
+    let _lastRedemptions = [];
+
     async function loadPromoListAdmin() {
       const listDiv = document.getElementById('promoListAdmin');
       const kpiDiv = document.getElementById('promoAdminKpiGrid');
@@ -2071,36 +2091,92 @@
           API_getAllPromotions(),
           API_getAllRedemptions()
         ]);
-        const promos = promoResult.promotions || [];
-        const redemptions = redemptionResult.redemptions || [];
+        _lastPromos = promoResult.promotions || [];
+        _lastRedemptions = redemptionResult.redemptions || [];
 
-        const stats = computePromoStats(promos, redemptions);
+        const stats = computePromoStats(_lastPromos, _lastRedemptions);
         renderPromoKpiCards(stats, 'promoAdminKpiGrid');
 
-        if (promos.length === 0) {
-          listDiv.innerHTML = '<div style="text-align: center; padding: 1rem; color: #999;">ยังไม่มีโปรโมชั่น</div>';
-          return;
-        }
-
-        listDiv.innerHTML = promos.slice().reverse().map(p => {
-          const targetDesc = promoTargetDesc(p);
-          const typeDesc = p.type === 'discount' ? `ส่วนลด ${p.value}%` : `คูปอง: ${p.code}`;
-          const statusBadge = p.status === 'used' ? '✅ ใช้แล้ว' : '🟢 พร้อมใช้';
-          const redeemBtn = p.status !== 'used'
-            ? `<button style="width: auto; padding: 6px 14px; font-size: 12px; margin-top: 8px;" class="btn-success" onclick="markPromoUsed('${p.id}', '${p.targetType}')">ยืนยันการใช้</button>`
-            : '';
-          const deleteBtn = `<button style="width: auto; padding: 6px 14px; font-size: 12px; margin-top: 8px; margin-left: 8px;" class="btn-danger" onclick="deletePromo('${p.id}')">🗑️ ลบ</button>`;
-          return `
-            <div class="customer-item" style="cursor: default;">
-              <div class="customer-name">${p.title}</div>
-              <div class="customer-meta">${p.description}</div>
-              <div class="customer-meta">👤 ${targetDesc} • 🎫 ${typeDesc} • ${statusBadge}</div>
-              ${redeemBtn}${deleteBtn}
-            </div>
-          `;
-        }).join('');
+        renderPromoAdminList();
       } catch (err) {
         listDiv.innerHTML = '<div style="text-align: center; padding: 1rem; color: #FF3B30;">⚠️ โหลดไม่สำเร็จ</div>';
+      }
+    }
+
+    function renderPromoAdminList() {
+      const listDiv = document.getElementById('promoListAdmin');
+      const hideInactive = document.getElementById('promoHideInactive').checked;
+
+      if (_lastPromos.length === 0) {
+        listDiv.innerHTML = '<div style="text-align: center; padding: 1rem; color: #999;">ยังไม่มีโปรโมชั่น</div>';
+        return;
+      }
+
+      const visiblePromos = hideInactive
+        ? _lastPromos.filter(p => p.status !== 'expired' && p.status !== 'used')
+        : _lastPromos;
+
+      if (visiblePromos.length === 0) {
+        listDiv.innerHTML = '<div style="text-align: center; padding: 1rem; color: #999;">ไม่มีโปรที่กำลังใช้งาน (ลองปิด checkbox ด้านบนเพื่อดูทั้งหมด)</div>';
+        return;
+      }
+
+      listDiv.innerHTML = visiblePromos.slice().reverse().map(p => {
+        const targetDesc = promoTargetDesc(p);
+        const typeDesc = p.type === 'discount' ? `ส่วนลด ${p.value}%` : `คูปอง: ${p.code}`;
+
+        let statusBadge, actionBtns;
+        if (p.status === 'used') {
+          statusBadge = '✅ ใช้แล้ว';
+          actionBtns = '';
+        } else if (p.status === 'expired') {
+          statusBadge = '⚫ ปิดใช้งาน';
+          actionBtns = `<button style="width: auto; padding: 6px 14px; font-size: 12px; margin-top: 8px;" class="btn-info" onclick="reactivatePromo('${p.id}')">🔓 เปิดใช้งานอีกครั้ง</button>`;
+        } else {
+          statusBadge = '🟢 พร้อมใช้';
+          actionBtns =
+            `<button style="width: auto; padding: 6px 14px; font-size: 12px; margin-top: 8px;" class="btn-success" onclick="markPromoUsed('${p.id}', '${p.targetType}')">ยืนยันการใช้</button>` +
+            `<button style="width: auto; padding: 6px 14px; font-size: 12px; margin-top: 8px; margin-left: 8px;" class="btn-warning" onclick="deactivatePromo('${p.id}')">⏸️ ปิดใช้งาน</button>`;
+        }
+
+        const deleteBtn = `<button style="width: auto; padding: 6px 14px; font-size: 12px; margin-top: 8px; margin-left: 8px;" class="btn-danger" onclick="deletePromo('${p.id}')">🗑️ ลบ</button>`;
+
+        return `
+          <div class="customer-item" style="cursor: default;">
+            <div class="customer-name">${p.title}</div>
+            <div class="customer-meta">${p.description}</div>
+            <div class="customer-meta">👤 ${targetDesc} • 🎫 ${typeDesc} • ${statusBadge}</div>
+            ${actionBtns}${deleteBtn}
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function deactivatePromo(promotionId) {
+      if (!confirm('ปิดใช้งานโปรนี้? ลูกค้าจะไม่เห็นโปรนี้อีก แต่ข้อมูลยังเก็บไว้ (เปิดใช้งานกลับได้ทีหลัง)')) return;
+      try {
+        const result = await API_setPromotionStatus(promotionId, 'expired');
+        if (result.success) {
+          loadPromoListAdmin();
+        } else {
+          alert('❌ ' + (result.error || 'ไม่สำเร็จ'));
+        }
+      } catch (err) {
+        alert('❌ ข้อผิดพลาด: ' + err.message);
+      }
+    }
+
+    async function reactivatePromo(promotionId) {
+      if (!confirm('เปิดใช้งานโปรนี้อีกครั้ง? ลูกค้าจะเห็นโปรนี้อีกครั้ง')) return;
+      try {
+        const result = await API_setPromotionStatus(promotionId, 'active');
+        if (result.success) {
+          loadPromoListAdmin();
+        } else {
+          alert('❌ ' + (result.error || 'ไม่สำเร็จ'));
+        }
+      } catch (err) {
+        alert('❌ ข้อผิดพลาด: ' + err.message);
       }
     }
 
