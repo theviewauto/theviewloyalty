@@ -556,7 +556,7 @@
       </header>
       
       <div class="btn-group">
-        <button class="btn-primary" onclick="switchMode('scan')">📱 สแกน QR Code</button>
+        <button class="btn-primary" onclick="switchMode('search')">🔍 ค้นหาลูกค้า</button>
         <button class="btn-success" onclick="switchMode('list')">👥 ดูรายชื่อลูกค้า</button>
         <button class="btn-info" onclick="switchMode('analytics')">📊 วิเคราะห์ข้อมูล</button>
         <button class="btn-warning" onclick="switchMode('birthday')">🎂 วันเกิดใกล้มา</button>
@@ -566,21 +566,20 @@
     </div>
 
     <!-- SCAN MODE -->
-    <div id="scan-mode" class="mode">
-      <h2>🔍 สแกน QR Code ลูกค้า</h2>
-      <video id="video" playsinline></video>
-      <canvas id="canvas" style="display: none;"></canvas>
+    <!-- SEARCH MODE -->
+    <div id="search-mode" class="mode">
+      <h2>🔍 ค้นหาลูกค้า</h2>
       
-      <p style="font-size: 14px; color: #666; text-align: center; margin-bottom: 1rem;">
-        ✓ กล้องทำงานอยู่ - โปรดชี้ไปยัง QR code
-      </p>
-
       <div class="form-group">
-        <label>หรือป้อน ID ลูกค้า:</label>
-        <input type="text" id="manualIdInput" placeholder="เช่น 1001" />
+        <label>ค้นหาด้วยเบอร์โทรหรือชื่อ</label>
+        <input type="text" id="searchInput" placeholder="พิมพ์เบอร์โทร (081...) หรือชื่อ (เช่น สมชาย)" 
+               oninput="searchCustomers()" 
+               style="font-size: 16px; padding: 12px; margin-bottom: 12px;">
       </div>
-      
-      <button class="btn-secondary" style="width: 100%;" onclick="switchMode('home')">← กลับหน้าหลัก</button>
+
+      <div id="searchResults" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; background: white;"></div>
+
+      <button class="btn-secondary" style="width: 100%; margin-top: 1rem;" onclick="switchMode('home')">← กลับหน้าหลัก</button>
     </div>
 
     <!-- LIST MODE -->
@@ -965,67 +964,42 @@
       document.querySelectorAll('.mode').forEach(el => el.classList.remove('active'));
       document.getElementById(mode + '-mode').classList.add('active');
       
-      if (mode === 'scan') startScan();
+      if (mode === 'search') document.getElementById('searchInput').focus();
       else if (mode === 'list') loadCustomerList();
       else if (mode === 'analytics') loadAnalytics();
       else if (mode === 'birthday') loadBirthdayList();
-      else stopScan();
     }
 
-    async function startScan() {
-      const video = document.getElementById('video');
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: 'environment' } 
-        });
-        video.srcObject = stream;
-        video.onloadedmetadata = () => video.play();
-        
-        scanInterval = setInterval(processVideo, 300);
-      } catch (err) {
-        alert('ไม่สามารถเข้าถึงกล้อง: ' + err.message);
+    function searchCustomers() {
+      const query = document.getElementById('searchInput').value.toLowerCase().trim();
+      const resultsDiv = document.getElementById('searchResults');
+
+      if (!query) {
+        resultsDiv.innerHTML = '';
+        return;
       }
-      
-      document.getElementById('manualIdInput').onkeypress = (e) => {
-        if (e.key === 'Enter') {
-          const customer = customers.find(c => c.id === e.target.value);
-          if (customer) {
-            selectCustomer(customer.id);
-          } else {
-            alert('ไม่พบลูกค้า');
-          }
-        }
-      };
-    }
 
-    function stopScan() {
-      if (scanInterval) clearInterval(scanInterval);
-      const video = document.getElementById('video');
-      if (video.srcObject) {
-        video.srcObject.getTracks().forEach(track => track.stop());
+      // ค้นหาด้วยเบอร์โทร (normalize) หรือชื่อ
+      const results = customers.filter(c => {
+        const phoneNormalized = (c.phone || '').replace(/\D/g, '').slice(-9); // เอาเลข 9 หลักสุดท้าย (ไม่รวม 0 นำหน้า)
+        const queryPhone = query.replace(/\D/g, '').slice(-9);
+        return phoneNormalized.includes(queryPhone) || (c.name || '').toLowerCase().includes(query);
+      });
+
+      if (results.length === 0) {
+        resultsDiv.innerHTML = '<div style="padding: 1rem; text-align: center; color: #999;">ไม่พบลูกค้า</div>';
+        return;
       }
-    }
 
-    function processVideo() {
-      const video = document.getElementById('video');
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d');
-
-      if (!video.videoWidth) return;
-
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(imageData.data, imageData.width, imageData.height);
-
-      if (code) {
-        const customer = customers.find(c => c.id === code.data);
-        if (customer) {
-          selectCustomer(customer.id);
-        }
-      }
+      resultsDiv.innerHTML = results.map(c => {
+        const tier = getTier(c.points, c.tierOverride);
+        return `
+          <div style="padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; hover: background-color: #f5f5f5;" onclick="selectCustomer('${c.id}')">
+            <div style="font-weight: 600; color: #1a1a1a;">${c.name}</div>
+            <div style="font-size: 12px; color: #666;">📱 ${c.phone} • ${tier.name} • คะแนน ${(c.points || 0).toLocaleString()}</div>
+          </div>
+        `;
+      }).join('');
     }
 
     function loadBirthdayList() {
