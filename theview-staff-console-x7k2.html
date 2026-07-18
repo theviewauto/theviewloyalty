@@ -561,6 +561,7 @@
         <button class="btn-info" onclick="switchMode('analytics')">📊 วิเคราะห์ข้อมูล</button>
         <button class="btn-warning" onclick="switchMode('birthday')">🎂 วันเกิดใกล้มา</button>
         <button class="btn-warning" onclick="switchMode('create')">➕ เพิ่มสมาชิกใหม่</button>
+        <button class="btn-info" onclick="switchMode('promoAdmin')">🎁 โปรโมชั่น</button>
         <button class="btn-secondary" onclick="exportData()" style="width: 100%;">💾 Export CSV</button>
       </div>
     </div>
@@ -719,6 +720,74 @@
         <button class="btn-warning" onclick="createCustomer()">✓ ลงทะเบียน</button>
         <button class="btn-secondary" onclick="switchMode('home')">← ยกเลิก</button>
       </div>
+    </div>
+
+    <!-- PROMOTION ADMIN MODE -->
+    <div id="promoAdmin-mode" class="mode">
+      <h2>🎁 สร้างโปรโมชั่น</h2>
+
+      <div class="form-group">
+        <label>ส่งให้</label>
+        <select id="promoTargetType" onchange="togglePromoTargetInput()">
+          <option value="customer">ลูกค้ารายบุคคล</option>
+          <option value="tier">ตาม Tier (ส่งให้ทุกคนในระดับนั้น)</option>
+        </select>
+      </div>
+
+      <div id="promoTargetCustomerBox" class="form-group">
+        <label>ค้นหาลูกค้า</label>
+        <input type="text" id="promoCustomerSearch" placeholder="เบอร์โทรหรือชื่อ" oninput="searchPromoCustomer()">
+        <div id="promoCustomerResults" style="max-height: 200px; overflow-y: auto; border-radius: 6px;"></div>
+        <div id="promoSelectedCustomer" style="display:none; margin-top: 8px; padding: 10px; background: #eef7ff; border-radius: 6px; font-size: 14px;"></div>
+      </div>
+
+      <div id="promoTargetTierBox" class="form-group" style="display:none;">
+        <label>เลือก Tier</label>
+        <select id="promoTierSelect">
+          <option value="Silver">Silver (ทุกคน)</option>
+          <option value="Gold">Gold (ทุกคน)</option>
+          <option value="Platinum">Platinum (ทุกคน)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>หัวข้อโปรโมชั่น</label>
+        <input type="text" id="promoTitle" placeholder="เช่น ลดพิเศษเดือนเกิด">
+      </div>
+
+      <div class="form-group">
+        <label>รายละเอียด</label>
+        <input type="text" id="promoDesc" placeholder="เช่น ลดค่าซ่อม 20% เมื่อมาใช้บริการ">
+      </div>
+
+      <div class="form-group">
+        <label>ประเภทโปรโมชั่น</label>
+        <select id="promoType" onchange="togglePromoValueInput()">
+          <option value="discount">ส่วนลด (%)</option>
+          <option value="coupon">คูปองโค้ด</option>
+        </select>
+      </div>
+
+      <div id="promoDiscountBox" class="form-group">
+        <label>เปอร์เซ็นต์ส่วนลด</label>
+        <input type="number" id="promoDiscountValue" placeholder="เช่น 20" min="1" max="100">
+      </div>
+
+      <div id="promoCouponBox" class="form-group" style="display:none;">
+        <label>โค้ดคูปอง</label>
+        <input type="text" id="promoCouponCode" placeholder="เช่น VIEW2026">
+      </div>
+
+      <div id="promoAdminError" class="error-msg"></div>
+      <div id="promoAdminSuccess" class="message success" style="display:none;"></div>
+
+      <div class="btn-group">
+        <button class="btn-warning" onclick="submitPromotion()">✓ ส่งโปรโมชั่น</button>
+        <button class="btn-secondary" onclick="switchMode('home')">← กลับหน้าหลัก</button>
+      </div>
+
+      <h2 style="margin-top: 2rem;">📋 โปรโมชั่นทั้งหมด</h2>
+      <div id="promoListAdmin"></div>
     </div>
 
     <!-- DETAIL MODE -->
@@ -892,6 +961,32 @@
       });
     }
 
+    async function API_getAllPromotions() {
+      return await apiCall({
+        action: 'getAllPromotions',
+        token: ADMIN_TOKEN
+      });
+    }
+
+    async function API_createPromotion(data) {
+      return await apiPost({
+        action: 'createPromotion',
+        token: ADMIN_TOKEN,
+        data: data
+      });
+    }
+
+    async function API_redeemPromotion(promotionId, customerId) {
+      return await apiPost({
+        action: 'redeemPromotion',
+        token: ADMIN_TOKEN,
+        data: {
+          promotionId: promotionId,
+          customerId: customerId
+        }
+      });
+    }
+
     // ===================== MAIN APP =====================
     let customers = [];
     let transactions = [];
@@ -968,6 +1063,7 @@
       else if (mode === 'list') loadCustomerList();
       else if (mode === 'analytics') loadAnalytics();
       else if (mode === 'birthday') loadBirthdayList();
+      else if (mode === 'promoAdmin') loadPromoListAdmin();
     }
 
     function searchCustomers() {
@@ -1667,6 +1763,203 @@
       document.body.removeChild(link);
       
       alert('✓ Export เสร็จแล้ว!');
+    }
+
+    // ===================== PROMOTION FUNCTIONS =====================
+
+    let selectedPromoCustomer = null;
+
+    function togglePromoTargetInput() {
+      const type = document.getElementById('promoTargetType').value;
+      document.getElementById('promoTargetCustomerBox').style.display = type === 'customer' ? 'block' : 'none';
+      document.getElementById('promoTargetTierBox').style.display = type === 'tier' ? 'block' : 'none';
+    }
+
+    function togglePromoValueInput() {
+      const type = document.getElementById('promoType').value;
+      document.getElementById('promoDiscountBox').style.display = type === 'discount' ? 'block' : 'none';
+      document.getElementById('promoCouponBox').style.display = type === 'coupon' ? 'block' : 'none';
+    }
+
+    function searchPromoCustomer() {
+      const query = document.getElementById('promoCustomerSearch').value.toLowerCase().trim();
+      const resultsDiv = document.getElementById('promoCustomerResults');
+
+      if (!query) {
+        resultsDiv.innerHTML = '';
+        return;
+      }
+
+      const results = customers.filter(c => {
+        const phoneNormalized = (c.phone || '').replace(/\D/g, '').slice(-9);
+        const queryPhone = query.replace(/\D/g, '').slice(-9);
+        return (queryPhone && phoneNormalized.includes(queryPhone)) || (c.name || '').toLowerCase().includes(query);
+      });
+
+      if (results.length === 0) {
+        resultsDiv.innerHTML = '<div style="padding: 10px; color: #999; font-size: 13px;">ไม่พบลูกค้า</div>';
+        return;
+      }
+
+      resultsDiv.innerHTML = results.slice(0, 10).map(c => `
+        <div style="padding: 10px; border-bottom: 1px solid #eee; cursor: pointer;" onclick="selectPromoCustomer('${c.id}')">
+          <strong>${c.name}</strong> — ${c.phone}
+        </div>
+      `).join('');
+    }
+
+    function selectPromoCustomer(id) {
+      const c = customers.find(x => x.id === id);
+      if (!c) return;
+      selectedPromoCustomer = c;
+      document.getElementById('promoCustomerResults').innerHTML = '';
+      document.getElementById('promoCustomerSearch').value = '';
+      document.getElementById('promoSelectedCustomer').style.display = 'block';
+      document.getElementById('promoSelectedCustomer').innerHTML =
+        `✓ เลือก: <strong>${c.name}</strong> (${c.phone}) ` +
+        `<button style="width: auto; padding: 4px 10px; margin-left: 8px; font-size: 12px;" onclick="clearPromoCustomer()">✕ เปลี่ยน</button>`;
+    }
+
+    function clearPromoCustomer() {
+      selectedPromoCustomer = null;
+      document.getElementById('promoSelectedCustomer').style.display = 'none';
+      document.getElementById('promoSelectedCustomer').innerHTML = '';
+    }
+
+    async function submitPromotion() {
+      const errorEl = document.getElementById('promoAdminError');
+      const successEl = document.getElementById('promoAdminSuccess');
+      errorEl.textContent = '';
+      successEl.style.display = 'none';
+
+      const targetType = document.getElementById('promoTargetType').value;
+      const title = document.getElementById('promoTitle').value.trim();
+      const desc = document.getElementById('promoDesc').value.trim();
+      const type = document.getElementById('promoType').value;
+
+      if (!title || !desc) {
+        errorEl.textContent = '❌ กรุณากรอกหัวข้อและรายละเอียด';
+        return;
+      }
+
+      let targetValue;
+      if (targetType === 'customer') {
+        if (!selectedPromoCustomer) {
+          errorEl.textContent = '❌ กรุณาเลือกลูกค้า';
+          return;
+        }
+        targetValue = selectedPromoCustomer.id;
+      } else {
+        targetValue = document.getElementById('promoTierSelect').value;
+      }
+
+      let value = '', code = '';
+      if (type === 'discount') {
+        value = document.getElementById('promoDiscountValue').value;
+        if (!value || value < 1 || value > 100) {
+          errorEl.textContent = '❌ กรุณาใส่เปอร์เซ็นต์ส่วนลด 1-100';
+          return;
+        }
+      } else {
+        code = document.getElementById('promoCouponCode').value.trim();
+        if (!code) {
+          errorEl.textContent = '❌ กรุณาใส่โค้ดคูปอง';
+          return;
+        }
+      }
+
+      try {
+        const result = await API_createPromotion({
+          title: title, description: desc, type: type, value: value, code: code,
+          targetType: targetType, targetValue: targetValue
+        });
+
+        if (!result.success) {
+          errorEl.textContent = '❌ ' + (result.error || 'ไม่สำเร็จ');
+          return;
+        }
+
+        successEl.textContent = '✓ ส่งโปรโมชั่นสำเร็จ!';
+        successEl.style.display = 'block';
+        setTimeout(() => { successEl.style.display = 'none'; }, 3000);
+
+        document.getElementById('promoTitle').value = '';
+        document.getElementById('promoDesc').value = '';
+        document.getElementById('promoDiscountValue').value = '';
+        document.getElementById('promoCouponCode').value = '';
+        clearPromoCustomer();
+        loadPromoListAdmin();
+      } catch (err) {
+        errorEl.textContent = '❌ ข้อผิดพลาดเครือข่าย: ' + err.message;
+      }
+    }
+
+    async function loadPromoListAdmin() {
+      const listDiv = document.getElementById('promoListAdmin');
+      listDiv.innerHTML = '<div style="text-align: center; padding: 1rem; color: #999;">⏳ กำลังโหลด...</div>';
+
+      try {
+        const result = await API_getAllPromotions();
+        const promos = result.promotions || [];
+
+        if (promos.length === 0) {
+          listDiv.innerHTML = '<div style="text-align: center; padding: 1rem; color: #999;">ยังไม่มีโปรโมชั่น</div>';
+          return;
+        }
+
+        listDiv.innerHTML = promos.slice().reverse().map(p => {
+          const targetCustomer = p.targetType === 'customer' ? customers.find(c => c.id === p.targetValue) : null;
+          const targetDesc = p.targetType === 'customer'
+            ? (targetCustomer ? `${targetCustomer.name} (${targetCustomer.phone})` : p.targetValue)
+            : `Tier: ${p.targetValue} (ทุกคน)`;
+          const typeDesc = p.type === 'discount' ? `ส่วนลด ${p.value}%` : `คูปอง: ${p.code}`;
+          const statusBadge = p.status === 'used' ? '✅ ใช้แล้ว' : '🟢 พร้อมใช้';
+          const redeemBtn = p.status !== 'used'
+            ? `<button style="width: auto; padding: 6px 14px; font-size: 12px; margin-top: 8px;" class="btn-success" onclick="markPromoUsed('${p.id}', '${p.targetType}')">ยืนยันการใช้</button>`
+            : '';
+          return `
+            <div class="customer-item" style="cursor: default;">
+              <div class="customer-name">${p.title}</div>
+              <div class="customer-meta">${p.description}</div>
+              <div class="customer-meta">👤 ${targetDesc} • 🎫 ${typeDesc} • ${statusBadge}</div>
+              ${redeemBtn}
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        listDiv.innerHTML = '<div style="text-align: center; padding: 1rem; color: #FF3B30;">⚠️ โหลดไม่สำเร็จ</div>';
+      }
+    }
+
+    async function markPromoUsed(promotionId, targetType) {
+      let customerId = null;
+
+      if (targetType === 'tier') {
+        // โปรตาม Tier ใช้ร่วมกันได้หลายคน ต้องระบุว่าลูกค้าคนไหนใช้ในครั้งนี้
+        const phone = prompt('พิมพ์เบอร์โทรลูกค้าที่ใช้โปรโมชั่นนี้:');
+        if (!phone) return;
+        const normalizedInput = phone.replace(/\D/g, '');
+        const cust = customers.find(c => (c.phone || '').replace(/\D/g, '').includes(normalizedInput));
+        if (!cust) {
+          alert('❌ ไม่พบลูกค้าเบอร์นี้');
+          return;
+        }
+        if (!confirm(`ยืนยันว่า ${cust.name} (${cust.phone}) ใช้โปรโมชั่นนี้แล้ว?`)) return;
+        customerId = cust.id;
+      } else {
+        if (!confirm('ยืนยันว่าลูกค้าใช้โปรโมชั่นนี้แล้ว?')) return;
+      }
+
+      try {
+        const result = await API_redeemPromotion(promotionId, customerId);
+        if (result.success) {
+          loadPromoListAdmin();
+        } else {
+          alert('❌ ' + (result.error || 'ไม่สำเร็จ'));
+        }
+      } catch (err) {
+        alert('❌ ข้อผิดพลาด: ' + err.message);
+      }
     }
 
     loadCustomerList();
