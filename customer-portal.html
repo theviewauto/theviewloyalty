@@ -516,9 +516,9 @@
             <span>🎁</span>
             โปรโมชั่น
           </button>
-          <button class="btn-secondary btn-icon" onclick="shareWhatsApp()">
-            <span>💬</span>
-            WhatsApp
+          <button class="btn-secondary btn-icon" onclick="goToWebsite()">
+            <span>🌐</span>
+            เว็บไซต์
           </button>
           <button class="btn-secondary btn-icon" onclick="logout()">
             <span>🚪</span>
@@ -570,6 +570,9 @@
     // ===================== API CLIENT (Google Sheets) =====================
     const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbymAVUbnuG_u0wyRXC6IhX10I0ccJQ_tOUQbXDd_cFSefXWOpVymP5DKNq1-vv3pakh/exec';
     const ADMIN_TOKEN = 'Aviewtrader187956';
+
+    // ⚠️ แก้ลิงก์นี้เมื่อเว็บไซต์หลักของร้านสร้างเสร็จแล้ว
+    const MAIN_WEBSITE_URL = 'https://theviewgroup.com';
 
     async function apiCall(params) {
       try {
@@ -859,10 +862,8 @@
       }
     }
 
-    function shareWhatsApp() {
-      const msg = `🎉 สวัสดี! ฉันเป็นสมาชิก ${getTier(currentCustomer.points, currentCustomer.tierOverride).name} ที่ THE VIEW ยล้อม\n\nคะแนนปัจจุบัน: ${currentCustomer.points} 🌟\nมาซ่อมรถด้วยกันได้นะ! 💚\n\nhttps://loyalty.theviewgroup.com`;
-      const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-      window.open(url, '_blank');
+    function goToWebsite() {
+      window.open(MAIN_WEBSITE_URL, '_blank');
     }
 
     function logout() {
