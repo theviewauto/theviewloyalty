@@ -427,13 +427,8 @@
           <input type="tel" id="loginPhone" placeholder="081-234-5678" />
         </div>
         
-        <button class="btn-primary" onclick="requestOTP()">ส่ง OTP</button>
+        <button class="btn-primary" onclick="requestOTP()">เข้าสู่ระบบ</button>
         
-        <div style="text-align: center; margin-top: 1rem; font-size: 12px; color: #666;">
-          โค้ด OTP จะถูกส่งไป SMS <br/>
-          (ระบบจำลอง: ป้อน 000000)
-        </div>
-
         <div id="apiStatus" style="text-align: center; margin-top: 1rem; font-size: 11px; color: #999;"></div>
       </div>
       
@@ -717,7 +712,7 @@
       
       // Parse input (วดปพศ 8 หลัก) → convert to YYYY-MM-DD (คศ)
       if (enteredDOB.length !== 8 || !/^\d{8}$/.test(enteredDOB)) {
-        errorEl.textContent = '❌ รูปแบบไม่ถูกต้อง (พิมพ์แบบ วดปพศ เช่น 30042539)';
+        errorEl.textContent = '❌ รูปแบบไม่ถูกต้อง (พิมพ์แบบ วดปพศ เช่น 20052500)';
         errorEl.style.display = 'block';
         return;
       }
