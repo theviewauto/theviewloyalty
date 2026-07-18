@@ -487,9 +487,6 @@
         <div class="points-display">
           <div class="points-label">คะแนนสะสมปัจจุบัน</div>
           <div class="points-value" id="dashPoints">450</div>
-          <div class="points-note">
-            <span id="pointsNote"></span>
-          </div>
         </div>
         
         <div class="info-grid">
@@ -766,15 +763,6 @@
           ⭐ ${tier.name} Member
         </div>
       `;
-      
-      // Points note
-      const pointsNeeded = tier.name === 'Silver' ? 50000 - currentCustomer.points : 
-                          tier.name === 'Gold' ? 150000 - currentCustomer.points : 0;
-      if (pointsNeeded > 0) {
-        document.getElementById('pointsNote').textContent = `ต้องสะสมอีก ${pointsNeeded.toLocaleString()} เพื่อขึ้น tier ถัดไป`;
-      } else {
-        document.getElementById('pointsNote').textContent = `คุณอยู่ in tier สูงสุด! 🎉`;
-      }
       
       // Birthday alert
       const birthdayAlert = document.getElementById('birthdayAlert');
