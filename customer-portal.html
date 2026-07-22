@@ -497,6 +497,7 @@
         </div>
         
         <div id="birthdayAlert"></div>
+        <div id="pointsExpiryAlert"></div>
         
         <div style="text-align: left; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #f0ead6;">
           <h3 style="font-size: 12px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 1rem; color: #6b5d3f;">ข้อมูลสมาชิก</h3>
@@ -609,6 +610,13 @@
         customerId: customerId,
         tier: tier,
         birthMonth: birthMonth
+      });
+    }
+
+    async function API_getMyExpiringPoints(customerId) {
+      return await apiCall({
+        action: 'getMyExpiringPoints',
+        customerId: customerId
       });
     }
 
@@ -794,6 +802,31 @@
       
       loadHistory();
       loadPromo();
+      loadPointsExpiryAlert();
+    }
+
+    async function loadPointsExpiryAlert() {
+      const alertDiv = document.getElementById('pointsExpiryAlert');
+      try {
+        const info = await API_getMyExpiringPoints(currentCustomer.id);
+        if (info.expiring) {
+          alertDiv.innerHTML = `
+            <div class="birthday-alert soon">
+              <div class="birthday-icon">⚠️</div>
+              <div style="font-weight: 600; color: #cc9900;">คะแนนใกล้หมดอายุ!</div>
+              <div style="font-size: 12px; color: #856404;">
+                💎 ${Number(info.points).toLocaleString()} คะแนน จะหมดอายุอีก ${info.daysLeft} วัน (${info.expiryDateText})<br>
+                รีบใช้ก่อนหมดอายุนะ 🙏
+              </div>
+            </div>
+          `;
+        } else {
+          alertDiv.innerHTML = '';
+        }
+      } catch (err) {
+        alertDiv.innerHTML = '';
+        console.error('Error loading points expiry alert:', err);
+      }
     }
 
     async function loadHistory() {
