@@ -672,6 +672,19 @@
         <div id="promoBreakdown" style="margin-top: 1rem;"></div>
       </div>
 
+      <!-- EXPIRING POINTS -->
+      <div class="dash-section">
+        <div class="dash-section-title">
+          ⚠️ คะแนนใกล้หมดอายุ
+          <span class="dash-section-sub">ภายใน 60 วันข้างหน้า</span>
+        </div>
+        <div id="expiringPointsList"></div>
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee; display: flex; flex-direction: column; gap: 8px;">
+          <button class="btn-secondary" style="width: 100%; font-size: 12px;" onclick="runPointsExpiryNow()">🔄 รันเช็คคะแนนหมดอายุตอนนี้ (ปกติรันอัตโนมัติ)</button>
+          <button class="btn-secondary" style="width: 100%; font-size: 12px;" onclick="setupPointsLedgerNow()">🔧 ตั้งค่าระบบแต้มหมดอายุครั้งแรก (รันครั้งเดียวตอนเปิดใช้ฟีเจอร์)</button>
+        </div>
+      </div>
+
       <button class="btn-info" style="width: 100%; margin-top: 0.5rem;" onclick="exportAnalyticsReport()">📥 Export รายงานฉบับเต็ม (CSV)</button>
       <button class="btn-secondary" style="width: 100%; margin-top: 8px;" onclick="switchMode('home')">← กลับหน้าหลัก</button>
     </div>
@@ -854,6 +867,28 @@
         <label>คะแนนที่ต้องใช้แลก (ไม่บังคับ)</label>
         <input type="number" id="promoPointsCost" placeholder="เว้นว่าง = ฟรี ไม่ต้องใช้คะแนน" min="0">
         <div style="font-size: 12px; color: #999; margin-top: 4px;">ถ้าใส่ค่า ระบบจะตัดคะแนนลูกค้าอัตโนมัติตอนกด "ยืนยันการใช้"</div>
+      </div>
+
+      <div class="form-group">
+        <label>จำนวนครั้งที่ใช้ได้ต่อคน</label>
+        <select id="promoMaxUsesType" onchange="togglePromoMaxUsesInput()">
+          <option value="1">ใช้ได้ครั้งเดียว (ค่าเริ่มต้น)</option>
+          <option value="0">ไม่จำกัด (ใช้ได้เรื่อยๆ ตราบใดมีคะแนนพอ)</option>
+          <option value="custom">กำหนดเอง</option>
+        </select>
+        <input type="number" id="promoMaxUsesCustom" placeholder="เช่น 3 ครั้ง" min="1" style="display:none; margin-top: 8px;">
+      </div>
+
+      <div class="form-group">
+        <label>วันเริ่มต้น (ไม่บังคับ)</label>
+        <input type="date" id="promoStartDate">
+        <div style="font-size: 12px; color: #999; margin-top: 4px;">เว้นว่าง = เริ่มใช้ได้ทันที</div>
+      </div>
+
+      <div class="form-group">
+        <label>วันสิ้นสุด (ไม่บังคับ)</label>
+        <input type="date" id="promoEndDate">
+        <div style="font-size: 12px; color: #999; margin-top: 4px;">เว้นว่าง = ไม่มีวันหมดอายุ (ใช้ได้จนกว่าจะปิดเอง)</div>
       </div>
 
       <div id="promoAdminError" class="error-msg"></div>
@@ -1118,6 +1153,29 @@
           promotionId: promotionId,
           status: status
         }
+      });
+    }
+
+    async function API_getExpiringPointsList() {
+      return await apiCall({
+        action: 'getExpiringPointsList',
+        token: ADMIN_TOKEN
+      });
+    }
+
+    async function API_setupPointsLedger() {
+      return await apiPost({
+        action: 'setupPointsLedger',
+        token: ADMIN_TOKEN,
+        data: {}
+      });
+    }
+
+    async function API_runPointsExpiry() {
+      return await apiPost({
+        action: 'runPointsExpiry',
+        token: ADMIN_TOKEN,
+        data: {}
       });
     }
 
@@ -1736,6 +1794,7 @@
 
     function loadAnalytics() {
       loadPromoAnalyticsForDashboard();
+      loadExpiringPointsForDashboard();
       const total = customers.length;
       const now = new Date();
       document.getElementById('analyticsUpdated').textContent =
@@ -2023,6 +2082,11 @@
       document.getElementById('promoCouponBox').style.display = type === 'coupon' ? 'block' : 'none';
     }
 
+    function togglePromoMaxUsesInput() {
+      const type = document.getElementById('promoMaxUsesType').value;
+      document.getElementById('promoMaxUsesCustom').style.display = type === 'custom' ? 'block' : 'none';
+    }
+
     function searchPromoCustomer() {
       const query = document.getElementById('promoCustomerSearch').value.toLowerCase().trim();
       const resultsDiv = document.getElementById('promoCustomerResults');
@@ -2119,10 +2183,31 @@
         return;
       }
 
+      const maxUsesType = document.getElementById('promoMaxUsesType').value;
+      let maxUses;
+      if (maxUsesType === 'custom') {
+        const customVal = document.getElementById('promoMaxUsesCustom').value;
+        maxUses = customVal ? parseInt(customVal, 10) : NaN;
+        if (!customVal || isNaN(maxUses) || maxUses < 1) {
+          errorEl.textContent = '❌ กรุณาใส่จำนวนครั้งที่ใช้ได้ (1 ขึ้นไป)';
+          return;
+        }
+      } else {
+        maxUses = parseInt(maxUsesType, 10); // '1' หรือ '0'
+      }
+
+      const startDate = document.getElementById('promoStartDate').value; // YYYY-MM-DD หรือว่าง
+      const endDate = document.getElementById('promoEndDate').value;
+      if (startDate && endDate && startDate > endDate) {
+        errorEl.textContent = '❌ วันเริ่มต้นต้องมาก่อนวันสิ้นสุด';
+        return;
+      }
+
       try {
         const result = await API_createPromotion({
           title: title, description: desc, type: type, value: value, code: code,
-          targetType: targetType, targetValue: targetValue, pointsCost: pointsCost
+          targetType: targetType, targetValue: targetValue, pointsCost: pointsCost,
+          maxUses: maxUses, startDate: startDate, endDate: endDate
         });
 
         if (!result.success) {
@@ -2139,6 +2224,11 @@
         document.getElementById('promoDiscountValue').value = '';
         document.getElementById('promoCouponCode').value = '';
         document.getElementById('promoPointsCost').value = '';
+        document.getElementById('promoMaxUsesType').value = '1';
+        document.getElementById('promoMaxUsesCustom').value = '';
+        document.getElementById('promoMaxUsesCustom').style.display = 'none';
+        document.getElementById('promoStartDate').value = '';
+        document.getElementById('promoEndDate').value = '';
         clearPromoCustomer();
         loadPromoListAdmin();
       } catch (err) {
@@ -2246,6 +2336,61 @@
       }
     }
 
+    async function loadExpiringPointsForDashboard() {
+      const listDiv = document.getElementById('expiringPointsList');
+      listDiv.innerHTML = '<div style="text-align: center; padding: 1rem; color: #999;">⏳ กำลังโหลด...</div>';
+      try {
+        const result = await API_getExpiringPointsList();
+        const list = result.list || [];
+
+        if (list.length === 0) {
+          listDiv.innerHTML = '<div class="empty-state">ไม่มีลูกค้าที่คะแนนใกล้หมดอายุตอนนี้</div>';
+          return;
+        }
+
+        listDiv.innerHTML = list.map(c => `
+          <div class="risk-item">
+            <div>
+              <strong>${c.name}</strong> — ${c.phone}<br>
+              <span style="font-size: 12px; color: #666;">💎 ${Number(c.points).toLocaleString()} คะแนน จะหมดอายุ ${c.expiryDateText}</span>
+            </div>
+            <span style="font-size: 12px; font-weight: 600; color: ${c.daysLeft <= 14 ? '#FF3B30' : '#FF9500'};">อีก ${c.daysLeft} วัน</span>
+          </div>
+        `).join('');
+      } catch (err) {
+        listDiv.innerHTML = '<div class="empty-state">โหลดไม่สำเร็จ</div>';
+      }
+    }
+
+    async function runPointsExpiryNow() {
+      if (!confirm('ยืนยันรันเช็คคะแนนหมดอายุตอนนี้เลย?\nปกติระบบรันให้อัตโนมัติอยู่แล้ว ใช้ปุ่มนี้เฉพาะตอนต้องการเช็คทันที')) return;
+      try {
+        const result = await API_runPointsExpiry();
+        if (result.success) {
+          alert(`✓ เช็คเสร็จแล้ว\nตัดแต้มหมดอายุไป ${result.expiredCount} ก้อน รวม ${result.expiredTotalPoints.toLocaleString()} คะแนน`);
+          loadExpiringPointsForDashboard();
+        } else {
+          alert('❌ ' + (result.error || 'ไม่สำเร็จ'));
+        }
+      } catch (err) {
+        alert('❌ ข้อผิดพลาด: ' + err.message);
+      }
+    }
+
+    async function setupPointsLedgerNow() {
+      if (!confirm('ตั้งค่าระบบแต้มหมดอายุครั้งแรก?\nระบบจะถือว่าคะแนนที่ลูกค้ามีอยู่ตอนนี้ทั้งหมด "ได้รับปีนี้" (ให้โอกาสเท่ากันทุกคน)\n\nทำครั้งเดียวพอ ไม่ต้องกดซ้ำอีก')) return;
+      try {
+        const result = await API_setupPointsLedger();
+        if (result.success) {
+          alert(`✓ ตั้งค่าเสร็จแล้ว\nสร้างข้อมูลให้ลูกค้า ${result.createdCount} คน`);
+        } else {
+          alert('❌ ' + (result.error || 'ไม่สำเร็จ'));
+        }
+      } catch (err) {
+        alert('❌ ข้อผิดพลาด: ' + err.message);
+      }
+    }
+
     let _lastPromos = [];
     let _lastRedemptions = [];
 
@@ -2281,9 +2426,26 @@
         return;
       }
 
+      const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+      // คำนวณสถานะจริงของแต่ละโปร (5 แบบ)
+      const withState = _lastPromos.map(p => {
+        let state;
+        if (p.status === 'expired') {
+          state = 'deactivated'; // admin ปิดเอง
+        } else if (p.startDate && todayStr < String(p.startDate)) {
+          state = 'not_started';
+        } else if (p.endDate && todayStr > String(p.endDate)) {
+          state = 'date_expired';
+        } else {
+          state = 'active';
+        }
+        return Object.assign({}, p, { _state: state });
+      });
+
       const visiblePromos = hideInactive
-        ? _lastPromos.filter(p => p.status !== 'expired' && p.status !== 'used')
-        : _lastPromos;
+        ? withState.filter(p => p._state === 'active' || p._state === 'not_started')
+        : withState;
 
       if (visiblePromos.length === 0) {
         listDiv.innerHTML = '<div style="text-align: center; padding: 1rem; color: #999;">ไม่มีโปรที่กำลังใช้งาน (ลองปิด checkbox ด้านบนเพื่อดูทั้งหมด)</div>';
@@ -2296,13 +2458,26 @@
         const pointsCost = parseInt(p.pointsCost, 10) || 0;
         const pointsDesc = pointsCost > 0 ? `💎 ใช้ ${pointsCost.toLocaleString()} คะแนน` : '🎁 ฟรี';
 
+        const maxUses = Number(p.maxUses) || 0;
+        const usesDesc = maxUses > 0 ? `🔁 ใช้ได้ ${maxUses} ครั้ง/คน` : '🔁 ไม่จำกัดครั้ง/คน';
+
+        const totalUsed = _lastRedemptions.filter(r => r.promotionId === p.id).length;
+        const usedDesc = `📊 ใช้ไปแล้วรวม ${totalUsed.toLocaleString()} ครั้ง`;
+
+        const dateDesc = (p.startDate || p.endDate)
+          ? `📅 ${p.startDate || 'ไม่กำหนด'} ถึง ${p.endDate || 'ไม่มีวันหมดอายุ'}`
+          : '📅 ใช้ได้ตลอด (ไม่กำหนดช่วงเวลา)';
+
         let statusBadge, actionBtns;
-        if (p.status === 'used') {
-          statusBadge = '✅ ใช้แล้ว';
-          actionBtns = '';
-        } else if (p.status === 'expired') {
-          statusBadge = '⚫ ปิดใช้งาน';
+        if (p._state === 'deactivated') {
+          statusBadge = '⚫ ปิดใช้งานเอง';
           actionBtns = `<button style="width: auto; padding: 6px 14px; font-size: 12px; margin-top: 8px;" class="btn-info" onclick="reactivatePromo('${p.id}')">🔓 เปิดใช้งานอีกครั้ง</button>`;
+        } else if (p._state === 'not_started') {
+          statusBadge = '⏳ ยังไม่เริ่ม';
+          actionBtns = `<button style="width: auto; padding: 6px 14px; font-size: 12px; margin-top: 8px;" class="btn-warning" onclick="deactivatePromo('${p.id}')">⏸️ ปิดใช้งาน</button>`;
+        } else if (p._state === 'date_expired') {
+          statusBadge = '⌛ หมดอายุแล้ว';
+          actionBtns = '';
         } else {
           statusBadge = '🟢 พร้อมใช้';
           actionBtns =
@@ -2316,7 +2491,9 @@
           <div class="customer-item" style="cursor: default;">
             <div class="customer-name">${p.title}</div>
             <div class="customer-meta">${p.description}</div>
-            <div class="customer-meta">👤 ${targetDesc} • 🎫 ${typeDesc} • ${pointsDesc} • ${statusBadge}</div>
+            <div class="customer-meta">👤 ${targetDesc} • 🎫 ${typeDesc} • ${pointsDesc}</div>
+            <div class="customer-meta">${usesDesc} • ${usedDesc} • ${statusBadge}</div>
+            <div class="customer-meta">${dateDesc}</div>
             ${actionBtns}${deleteBtn}
           </div>
         `;
@@ -2409,7 +2586,16 @@
           }
           loadPromoListAdmin();
         } else {
-          alert('❌ ' + (result.error || 'ไม่สำเร็จ') + (pointsCost > 0 ? '\n⚠️ คะแนนถูกตัดไปแล้ว กรุณาตรวจสอบข้อมูลลูกค้า' : ''));
+          const errorMessages = {
+            MAX_USES_REACHED: 'ลูกค้าคนนี้ใช้โปรนี้ครบจำนวนครั้งที่กำหนดแล้ว',
+            NOT_STARTED: 'โปรนี้ยังไม่ถึงวันเริ่มต้น',
+            EXPIRED: 'โปรนี้หมดอายุแล้ว',
+            INACTIVE: 'โปรนี้ถูกปิดใช้งานอยู่',
+            CUSTOMER_ID_REQUIRED: 'ไม่พบข้อมูลลูกค้า',
+            NOT_FOUND: 'ไม่พบโปรโมชั่นนี้'
+          };
+          const msg = errorMessages[result.error] || result.error || 'ไม่สำเร็จ';
+          alert('❌ ' + msg + (pointsCost > 0 ? '\n⚠️ คะแนนถูกตัดไปแล้ว กรุณาตรวจสอบข้อมูลลูกค้า' : ''));
         }
       } catch (err) {
         alert('❌ ข้อผิดพลาด: ' + err.message);
