@@ -732,6 +732,47 @@
       </div>
     </div>
 
+    <!-- EDIT CUSTOMER MODE -->
+    <div id="edit-mode" class="mode">
+      <h2>✏️ แก้ไขข้อมูลลูกค้า</h2>
+
+      <div class="pdpa-notice">
+        ⚠️ ใช้สำหรับกรณีลูกค้าขอเปลี่ยนเบอร์โทร/แก้ไขข้อมูลผิดพลาด (สิทธิ์ตาม PDPA)
+      </div>
+
+      <div class="form-group">
+        <label>ชื่อ-นามสกุล *</label>
+        <input type="text" id="editName" placeholder="เช่น สมชาย สุขไทย" />
+      </div>
+
+      <div class="form-group">
+        <label>เบอร์โทรศัพท์ *</label>
+        <input type="tel" id="editPhone" placeholder="เช่น 08x-xxx-xxxx" />
+      </div>
+
+      <div class="form-group">
+        <label>เพศ *</label>
+        <select id="editGender" required>
+          <option value="">-- เลือกเพศ --</option>
+          <option value="male">ชาย</option>
+          <option value="female">หญิง</option>
+          <option value="other">ไม่ระบุ</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>วันเกิด (ว/ด/ป) *</label>
+        <input type="date" id="editDOB" required />
+      </div>
+
+      <div id="editError" class="error-msg"></div>
+
+      <div class="btn-group">
+        <button class="btn-warning" onclick="submitEditCustomer()">✓ บันทึกการแก้ไข</button>
+        <button class="btn-secondary" onclick="switchMode('detail')">← ยกเลิก</button>
+      </div>
+    </div>
+
     <!-- PROMOTION ADMIN MODE -->
     <div id="promoAdmin-mode" class="mode">
       <h2>🎁 สร้างโปรโมชั่น</h2>
@@ -809,6 +850,12 @@
         <input type="text" id="promoCouponCode" placeholder="เช่น VIEW2026">
       </div>
 
+      <div class="form-group">
+        <label>คะแนนที่ต้องใช้แลก (ไม่บังคับ)</label>
+        <input type="number" id="promoPointsCost" placeholder="เว้นว่าง = ฟรี ไม่ต้องใช้คะแนน" min="0">
+        <div style="font-size: 12px; color: #999; margin-top: 4px;">ถ้าใส่ค่า ระบบจะตัดคะแนนลูกค้าอัตโนมัติตอนกด "ยืนยันการใช้"</div>
+      </div>
+
       <div id="promoAdminError" class="error-msg"></div>
       <div id="promoAdminSuccess" class="message success" style="display:none;"></div>
 
@@ -875,6 +922,11 @@
         <div style="font-size: 13px;">
           <strong>ID:</strong> <span id="detailCustomerId">-</span>
         </div>
+      </div>
+
+      <div class="btn-group" style="margin-top: 8px;">
+        <button class="btn-info" onclick="openEditCustomer()">✏️ แก้ไขข้อมูล</button>
+        <button class="btn-danger" onclick="deleteCustomerConfirm()">🗑️ ลบสมาชิก</button>
       </div>
       
       <div class="btn-grid">
@@ -973,6 +1025,22 @@
         action: 'createCustomer',
         token: ADMIN_TOKEN,
         data: data
+      });
+    }
+
+    async function API_updateCustomer(data) {
+      return await apiPost({
+        action: 'updateCustomer',
+        token: ADMIN_TOKEN,
+        data: data
+      });
+    }
+
+    async function API_deleteCustomer(customerId) {
+      return await apiPost({
+        action: 'deleteCustomer',
+        token: ADMIN_TOKEN,
+        data: { customerId: customerId }
       });
     }
 
@@ -1554,6 +1622,99 @@
       }
     }
 
+    function openEditCustomer() {
+      if (!currentCustomer) return;
+      document.getElementById('editName').value = currentCustomer.name || '';
+      document.getElementById('editPhone').value = currentCustomer.phone || '';
+      document.getElementById('editGender').value = currentCustomer.gender || '';
+      document.getElementById('editDOB').value = currentCustomer.dob || '';
+      document.getElementById('editError').textContent = '';
+      switchMode('edit');
+    }
+
+    async function submitEditCustomer() {
+      const name = document.getElementById('editName').value;
+      const phone = document.getElementById('editPhone').value.replace(/[-\s]/g, '');
+      const gender = document.getElementById('editGender').value;
+      const dob = document.getElementById('editDOB').value;
+      const errorEl = document.getElementById('editError');
+
+      errorEl.textContent = '';
+
+      if (!name || !phone || !gender || !dob) {
+        errorEl.textContent = '❌ กรุณากรอกข้อมูลให้ครบถ้วน';
+        return;
+      }
+
+      if (!/^\d{10}$/.test(phone)) {
+        errorEl.textContent = '❌ เบอร์โทรไม่ถูกต้อง (ใส่ 10 หลัก)';
+        return;
+      }
+
+      const birthDate = new Date(dob);
+      if (birthDate > new Date()) {
+        errorEl.textContent = '❌ วันเกิดต้องไม่เกินวันนี้';
+        return;
+      }
+
+      try {
+        const result = await API_updateCustomer({
+          customerId: currentCustomer.id,
+          name, phone, gender, dob
+        });
+
+        if (!result.success) {
+          if (result.error === 'DUPLICATE_PHONE') {
+            errorEl.textContent = `❌ เบอร์โทรนี้ถูกใช้กับลูกค้าคนอื่นแล้ว (ID: ${result.existingId} - ${result.existingName})`;
+          } else {
+            errorEl.textContent = '❌ ' + (result.error || 'บันทึกไม่สำเร็จ');
+          }
+          return;
+        }
+
+        // Reload customer list + ข้อมูลลูกค้าปัจจุบัน
+        const custResult = await API_getAllCustomers();
+        if (custResult.customers) customers = custResult.customers;
+        currentCustomer = customers.find(c => c.id === currentCustomer.id) || currentCustomer;
+
+        alert('✓ บันทึกการแก้ไขสำเร็จ!');
+        selectCustomer(currentCustomer.id);
+      } catch (err) {
+        errorEl.textContent = '❌ ข้อผิดพลาดเครือข่าย: ' + err.message;
+      }
+    }
+
+    async function deleteCustomerConfirm() {
+      if (!currentCustomer) return;
+
+      const typedName = prompt(
+        `⚠️ การลบข้อมูลนี้ถาวร ไม่สามารถกู้คืนได้\n\n` +
+        `จะลบข้อมูลลูกค้า "${currentCustomer.name}" รวมถึงประวัติคะแนน/โปรโมชั่นที่เกี่ยวข้องทั้งหมด\n\n` +
+        `พิมพ์ชื่อ "${currentCustomer.name}" เพื่อยืนยันการลบ:`
+      );
+
+      if (typedName === null) return; // กดยกเลิก
+      if (typedName.trim() !== currentCustomer.name.trim()) {
+        alert('❌ ชื่อไม่ตรงกัน ยกเลิกการลบ');
+        return;
+      }
+
+      try {
+        const result = await API_deleteCustomer(currentCustomer.id);
+        if (result.success) {
+          alert('✓ ลบข้อมูลลูกค้าสำเร็จ');
+          const custResult = await API_getAllCustomers();
+          if (custResult.customers) customers = custResult.customers;
+          currentCustomer = null;
+          switchMode('list');
+        } else {
+          alert('❌ ' + (result.error || 'ลบไม่สำเร็จ'));
+        }
+      } catch (err) {
+        alert('❌ ข้อผิดพลาด: ' + err.message);
+      }
+    }
+
     const THAI_MONTHS_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 
     function monthKey(date) {
@@ -1951,10 +2112,17 @@
         }
       }
 
+      const pointsCostInput = document.getElementById('promoPointsCost').value;
+      const pointsCost = pointsCostInput ? parseInt(pointsCostInput, 10) : 0;
+      if (pointsCostInput && (isNaN(pointsCost) || pointsCost < 0)) {
+        errorEl.textContent = '❌ คะแนนที่ต้องใช้แลกต้องเป็นตัวเลข 0 ขึ้นไป';
+        return;
+      }
+
       try {
         const result = await API_createPromotion({
           title: title, description: desc, type: type, value: value, code: code,
-          targetType: targetType, targetValue: targetValue
+          targetType: targetType, targetValue: targetValue, pointsCost: pointsCost
         });
 
         if (!result.success) {
@@ -1970,6 +2138,7 @@
         document.getElementById('promoDesc').value = '';
         document.getElementById('promoDiscountValue').value = '';
         document.getElementById('promoCouponCode').value = '';
+        document.getElementById('promoPointsCost').value = '';
         clearPromoCustomer();
         loadPromoListAdmin();
       } catch (err) {
@@ -2124,6 +2293,8 @@
       listDiv.innerHTML = visiblePromos.slice().reverse().map(p => {
         const targetDesc = promoTargetDesc(p);
         const typeDesc = p.type === 'discount' ? `ส่วนลด ${p.value}%` : `คูปอง: ${p.code}`;
+        const pointsCost = parseInt(p.pointsCost, 10) || 0;
+        const pointsDesc = pointsCost > 0 ? `💎 ใช้ ${pointsCost.toLocaleString()} คะแนน` : '🎁 ฟรี';
 
         let statusBadge, actionBtns;
         if (p.status === 'used') {
@@ -2145,7 +2316,7 @@
           <div class="customer-item" style="cursor: default;">
             <div class="customer-name">${p.title}</div>
             <div class="customer-meta">${p.description}</div>
-            <div class="customer-meta">👤 ${targetDesc} • 🎫 ${typeDesc} • ${statusBadge}</div>
+            <div class="customer-meta">👤 ${targetDesc} • 🎫 ${typeDesc} • ${pointsDesc} • ${statusBadge}</div>
             ${actionBtns}${deleteBtn}
           </div>
         `;
@@ -2181,7 +2352,11 @@
     }
 
     async function markPromoUsed(promotionId, targetType) {
+      const promo = _lastPromos.find(p => p.id === promotionId);
+      const pointsCost = promo ? (parseInt(promo.pointsCost, 10) || 0) : 0;
+
       let customerId = null;
+      let customerObj = null;
 
       if (targetType === 'tier' || targetType === 'birthday') {
         // โปรตาม Tier/เดือนเกิด ใช้ร่วมกันได้หลายคน ต้องระบุว่าลูกค้าคนไหนใช้ในครั้งนี้
@@ -2193,18 +2368,48 @@
           alert('❌ ไม่พบลูกค้าเบอร์นี้');
           return;
         }
-        if (!confirm(`ยืนยันว่า ${cust.name} (${cust.phone}) ใช้โปรโมชั่นนี้แล้ว?`)) return;
         customerId = cust.id;
+        customerObj = cust;
+      } else {
+        // โปรรายบุคคล — targetValue ของโปรคือ customerId อยู่แล้ว
+        customerId = promo ? promo.targetValue : null;
+        customerObj = customers.find(c => c.id === customerId) || null;
+      }
+
+      if (pointsCost > 0) {
+        if (!customerObj) {
+          alert('❌ ไม่พบข้อมูลคะแนนลูกค้า');
+          return;
+        }
+        if ((customerObj.points || 0) < pointsCost) {
+          alert(`❌ คะแนนไม่พอ (${customerObj.name} มี ${(customerObj.points || 0).toLocaleString()} คะแนน ต้องใช้ ${pointsCost.toLocaleString()} คะแนน)`);
+          return;
+        }
+        if (!confirm(`ยืนยันใช้ ${pointsCost.toLocaleString()} คะแนนแลกโปรนี้ให้ ${customerObj.name}?\n(คะแนนคงเหลือหลังใช้: ${((customerObj.points || 0) - pointsCost).toLocaleString()})`)) return;
       } else {
         if (!confirm('ยืนยันว่าลูกค้าใช้โปรโมชั่นนี้แล้ว?')) return;
       }
 
       try {
+        // ตัดคะแนนก่อน (ถ้าโปรนี้ต้องใช้คะแนน)
+        if (pointsCost > 0) {
+          const ptResult = await API_updatePoints(customerId, 'subtract', pointsCost);
+          if (!ptResult.success) {
+            alert('❌ ตัดคะแนนไม่สำเร็จ ยกเลิกการใช้โปรโมชั่น');
+            return;
+          }
+        }
+
         const result = await API_redeemPromotion(promotionId, customerId);
         if (result.success) {
+          if (pointsCost > 0) {
+            // โหลดคะแนนลูกค้าใหม่ ให้ตรงกับที่ตัดไปแล้ว
+            const custResult = await API_getAllCustomers();
+            if (custResult.customers) customers = custResult.customers;
+          }
           loadPromoListAdmin();
         } else {
-          alert('❌ ' + (result.error || 'ไม่สำเร็จ'));
+          alert('❌ ' + (result.error || 'ไม่สำเร็จ') + (pointsCost > 0 ? '\n⚠️ คะแนนถูกตัดไปแล้ว กรุณาตรวจสอบข้อมูลลูกค้า' : ''));
         }
       } catch (err) {
         alert('❌ ข้อผิดพลาด: ' + err.message);
