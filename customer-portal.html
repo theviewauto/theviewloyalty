@@ -848,11 +848,13 @@
 
         promoList.innerHTML = promos.map(p => {
           const typeDesc = p.type === 'discount' ? `ส่วนลด ${p.value}%` : `โค้ด: ${p.code}`;
+          const pointsCost = parseInt(p.pointsCost, 10) || 0;
+          const pointsDesc = pointsCost > 0 ? `💎 ใช้ ${pointsCost.toLocaleString()} คะแนนแลก` : '🎁 ใช้ฟรี';
           return `
             <div class="promo-card">
               <div class="promo-title">${p.title}</div>
               <div class="promo-desc">${p.description}</div>
-              <div class="promo-countdown">🎫 ${typeDesc}</div>
+              <div class="promo-countdown">🎫 ${typeDesc} • ${pointsDesc}</div>
             </div>
           `;
         }).join('');
