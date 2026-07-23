@@ -597,6 +597,13 @@
       });
     }
 
+    async function API_getCustomerById(customerId) {
+      return await apiCall({
+        action: 'getCustomerById',
+        customerId: customerId
+      });
+    }
+
     async function API_getTransactions(customerId) {
       return await apiCall({
         action: 'getTransactions',
@@ -744,6 +751,7 @@
       }
       
       // DOB verified ✅
+      localStorage.setItem('tv_customer_id', currentCustomer.id); // จำ session ไว้ กันต้อง login ใหม่ตอนกดย้อนกลับ
       displayDashboard();
       switchMode('dashboard');
     }
@@ -785,7 +793,7 @@
           <div class="birthday-alert soon">
             <div class="birthday-icon">🎂🎉</div>
             <div style="font-weight: 600; color: #cc9900;">วันเกิดวันนี้!!</div>
-            <div style="font-size: 12px; color: #856404;">ซ่อมรถวันนี้ ได้ส่วนลดพิเศษ 🎁</div>
+            <div style="font-size: 12px; color: #856404;">ซ่อมรถวันนี้ ได้ส่วนลด 50% 🎁</div>
           </div>
         `;
       } else if (daysUntilBday <= 7) {
@@ -793,7 +801,7 @@
           <div class="birthday-alert soon">
             <div class="birthday-icon">🎂</div>
             <div style="font-weight: 600; color: #cc9900;">วันเกิดใกล้มา!</div>
-            <div style="font-size: 12px; color: #856404;">อีก ${daysUntilBday} วัน • ส่วนลดพิเศษ 🎁</div>
+            <div style="font-size: 12px; color: #856404;">อีก ${daysUntilBday} วัน • ส่วนลด 50% 🎁</div>
           </div>
         `;
       } else {
@@ -903,10 +911,33 @@
 
     function logout() {
       currentCustomer = null;
+      localStorage.removeItem('tv_customer_id'); // ล้าง session กันเด้งกลับเข้ามาเอง
       document.getElementById('loginPhone').value = '';
       document.getElementById('dobInput').value = '';
       switchMode('login');
     }
+
+    // เช็ค session ที่จำไว้ตอนเปิดหน้า/กดย้อนกลับมา — ถ้าเคย login ไว้ พาเข้า Dashboard ทันที ไม่ต้องกรอกวันเกิดซ้ำ
+    async function restoreSession() {
+      const savedId = localStorage.getItem('tv_customer_id');
+      if (!savedId) return;
+
+      try {
+        const result = await API_getCustomerById(savedId);
+        if (result.found) {
+          currentCustomer = result.customer;
+          displayDashboard();
+          switchMode('dashboard');
+        } else {
+          localStorage.removeItem('tv_customer_id'); // account ถูกลบไปแล้ว เคลียร์ session เก่าทิ้ง
+        }
+      } catch (err) {
+        console.error('Restore session failed:', err);
+        // เน็ตมีปัญหาชั่วคราว — ปล่อยให้ค้างที่หน้า login ตามปกติ ไม่ลบ session ทิ้ง (ลองใหม่ตอนเน็ตกลับมาได้)
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', restoreSession);
 
   </script>
 </body>
