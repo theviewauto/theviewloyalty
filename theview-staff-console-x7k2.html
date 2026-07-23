@@ -570,6 +570,8 @@
     <!-- SEARCH MODE -->
     <div id="search-mode" class="mode">
       <h2>🔍 ค้นหาลูกค้า</h2>
+
+      <button class="btn-secondary" style="width: 100%; margin-bottom: 12px;" onclick="switchMode('home')">← กลับหน้าหลัก</button>
       
       <div class="form-group">
         <label>ค้นหาด้วยเบอร์โทรหรือชื่อ</label>
@@ -586,15 +588,24 @@
     <!-- LIST MODE -->
     <div id="list-mode" class="mode">
       <h2>👥 รายชื่อลูกค้า</h2>
-      
+
+      <button class="btn-secondary" style="width: 100%; margin-bottom: 12px;" onclick="switchMode('home')">← กลับหน้าหลัก</button>
+
+      <div class="form-group">
+        <input type="text" id="listFilterInput" placeholder="🔍 พิมพ์กรองรายชื่อ (ชื่อ/เบอร์โทร)" oninput="loadCustomerList()">
+      </div>
+      <div id="listFilterCount" style="font-size: 12px; color: #999; margin-bottom: 8px;"></div>
+
       <div id="customerList" class="customer-list"></div>
       
-      <button class="btn-secondary" style="width: 100%;" onclick="switchMode('home')">← กลับหน้าหลัก</button>
+      <button class="btn-secondary" style="width: 100%; margin-top: 12px;" onclick="switchMode('home')">← กลับหน้าหลัก</button>
     </div>
 
     <!-- BIRTHDAY MODE -->
     <div id="birthday-mode" class="mode">
       <h2>🎂 วันเกิดใกล้มา (30 วัน)</h2>
+
+      <button class="btn-secondary" style="width: 100%; margin-bottom: 12px;" onclick="switchMode('home')">← กลับหน้าหลัก</button>
       
       <div id="birthdayList" class="customer-list"></div>
       
@@ -604,6 +615,7 @@
     <!-- ANALYTICS MODE -->
     <div id="analytics-mode" class="mode">
       <h2>📊 Business Dashboard</h2>
+      <button class="btn-secondary" style="width: 100%; margin-bottom: 12px;" onclick="switchMode('home')">← กลับหน้าหลัก</button>
       <div style="font-size: 12px; color: #999; margin-top: -12px; margin-bottom: 1rem;" id="analyticsUpdated"></div>
 
       <!-- KPI OVERVIEW -->
@@ -692,6 +704,8 @@
     <!-- CREATE MODE (Registration) -->
     <div id="create-mode" class="mode">
       <h2>➕ ลงทะเบียนสมาชิกใหม่</h2>
+
+      <button class="btn-secondary" style="width: 100%; margin-bottom: 12px;" onclick="switchMode('home')">← ยกเลิก</button>
       
       <div class="pdpa-notice">
         ⚠️ ข้อมูลการลงทะเบียน: ตามพระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล (PDPA)
@@ -749,6 +763,8 @@
     <div id="edit-mode" class="mode">
       <h2>✏️ แก้ไขข้อมูลลูกค้า</h2>
 
+      <button class="btn-secondary" style="width: 100%; margin-bottom: 12px;" onclick="switchMode('detail')">← ยกเลิก</button>
+
       <div class="pdpa-notice">
         ⚠️ ใช้สำหรับกรณีลูกค้าขอเปลี่ยนเบอร์โทร/แก้ไขข้อมูลผิดพลาด (สิทธิ์ตาม PDPA)
       </div>
@@ -789,6 +805,8 @@
     <!-- PROMOTION ADMIN MODE -->
     <div id="promoAdmin-mode" class="mode">
       <h2>🎁 สร้างโปรโมชั่น</h2>
+
+      <button class="btn-secondary" style="width: 100%; margin-bottom: 12px;" onclick="switchMode('home')">← กลับหน้าหลัก</button>
 
       <div class="form-group">
         <label>ส่งให้</label>
@@ -913,6 +931,8 @@
     <!-- DETAIL MODE -->
     <div id="detail-mode" class="mode">
       <h2 id="detailName"></h2>
+
+      <button class="btn-secondary" style="width: 100%; margin-bottom: 12px;" onclick="switchMode('list')">← กลับรายชื่อ</button>
       
       <div id="message"></div>
       
@@ -1261,7 +1281,11 @@
       document.getElementById(mode + '-mode').classList.add('active');
       
       if (mode === 'search') document.getElementById('searchInput').focus();
-      else if (mode === 'list') loadCustomerList();
+      else if (mode === 'list') {
+        loadCustomerList();
+        const filterInput = document.getElementById('listFilterInput');
+        if (filterInput) filterInput.focus();
+      }
       else if (mode === 'analytics') loadAnalytics();
       else if (mode === 'birthday') loadBirthdayList();
       else if (mode === 'promoAdmin') {
@@ -1361,7 +1385,29 @@
 
     function loadCustomerList() {
       const list = document.getElementById('customerList');
-      list.innerHTML = customers.map(c => {
+      const countEl = document.getElementById('listFilterCount');
+      const filterInput = document.getElementById('listFilterInput');
+      const query = filterInput ? filterInput.value.toLowerCase().trim() : '';
+
+      const filtered = !query ? customers : customers.filter(c => {
+        const phoneNormalized = (c.phone || '').replace(/\D/g, '').slice(-9);
+        const queryPhone = query.replace(/\D/g, '').slice(-9);
+        return (c.name || '').toLowerCase().includes(query) ||
+               (queryPhone && phoneNormalized.includes(queryPhone));
+      });
+
+      if (countEl) {
+        countEl.textContent = query
+          ? `พบ ${filtered.length.toLocaleString()} คน จากทั้งหมด ${customers.length.toLocaleString()} คน`
+          : `ทั้งหมด ${customers.length.toLocaleString()} คน`;
+      }
+
+      if (filtered.length === 0) {
+        list.innerHTML = '<div class="empty-state">ไม่พบลูกค้าที่ตรงกับคำค้นหา</div>';
+        return;
+      }
+
+      list.innerHTML = filtered.map(c => {
         const tier = getTier(c.points, c.tierOverride);
         const genderText = { 'male': 'ชาย', 'female': 'หญิง', 'other': 'ไม่ระบุ' }[c.gender] || '-';
         const age = c.dob ? calculateAge(c.dob) : '-';
